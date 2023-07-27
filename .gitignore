@@ -1,0 +1,5 @@
+wandb/
+data/external_datasets/
+checkpoint*
+final_*
+CheungGuanaco.pkl

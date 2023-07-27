@@ -1,0 +1,15 @@
+idx,final_merged_checkpoint
+arguments;score,0.367609126984127
+arguments;score binary,0.7720734126984127
+bsp_ds;Beispiel,0.9183871895074844
+bsp_ds;Beispiel_für,0.45994948595762253
+bsp_ds;Erzählposition,0.6666666666666666
+bsp_ds;Wiedergabeform,0.5625
+bsp_ds;wiedergabe_binary,1.0
+bsp_ds;in_gedankengang,0.5
+bsp_ds;Modus_Zeit,1.0
+bsp_ds;total_distance,0.8632376392682394
+bsp_ds;Modus_Zeit_Beispiel,0.3960409462451935
+bsp_ds;Modus_Zeit_Text,0.5
+redewiedergabe;score,0.4614583333333333
+redewiedergabe;score binary,0.6458333333333333
