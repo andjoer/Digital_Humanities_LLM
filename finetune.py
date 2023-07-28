@@ -320,7 +320,7 @@ with open(script_args.output_dir+"/protocol.txt", "w") as file:
 tokenizer.padding_side = "right"
 print('model')
 print(model)
-print(script_args.use_4_bit)
+print(script_args.use_4bit)
 trainer = SFTTrainer(
     model=model,
     train_dataset=train_ds,
