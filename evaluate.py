@@ -14,7 +14,7 @@ import re
 import os
 from peft import AutoPeftModelForCausalLM
 import argparse
-
+from os import environ
 
 class Evaluate():
     """
@@ -533,7 +533,7 @@ if __name__ == "__main__":
     "--models",  
     nargs="*", 
     type=str,
-    default=['results/Cheung10k7b64/final_merged_checkpoint/','results/DettmersAll7b64/final_merged_checkpoint/'],  # default if nothing is provided
+    default=['./results/Cheung10k7b64/final_merged_checkpoint/','./results/DettmersAll7b64/final_merged_checkpoint/'],  # default if nothing is provided
     )
 
     args = CLI.parse_args()
@@ -543,13 +543,20 @@ if __name__ == "__main__":
 
     models = args.models #['results/run_1/final_merged_checkpoint/']
 
+    if  environ.get('EVAL_DIR') is not None:    
+        eval_folder= environ.get('EVAL_DIR')
+        print('updated eval_dir from ENV: '+str(eval_folder))
+    if  environ.get('MODELS') is not None:    
+        models = [environ.get('MODELS')]
+        print('updated models from ENV: '+str(models))
+
     sentence_model = SentenceTransformer('T-Systems-onsite/cross-en-de-roberta-sentence-transformer').to('cuda')
     evaluate_examples_sent = partial(evaluate_examples,sentence_model=sentence_model)
 
     statistics = {}
     for model in models: 
   
-        model_name = model.split('/')[1]
+        model_name = model.split('/')[2]
 
         if model[-1] != '/':
             model += '/'

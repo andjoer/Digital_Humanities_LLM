@@ -37,7 +37,7 @@ from transformers import (
 )
 import glob
 from sft_trainer.sft_trainer_mod import SFTTrainer
-
+import ast
 from os import environ            # to interact with weights and biases
 
 
@@ -160,6 +160,24 @@ class ScriptArguments:
 
 parser = HfArgumentParser(ScriptArguments)
 script_args = parser.parse_args_into_dataclasses()[0]
+
+if  environ.get('LORA_ALPHA') is not None:    
+    script_args.lora_alpha = int(environ.get('LORA_ALPHA'))
+    print('updated lora alpha from ENV: '+str(script_args.lora_alpha))
+if  environ.get('BITQ') is not None:    
+    script_args.use_4bit = ast.literal_eval(environ.get('BITQ'))
+    print('updated use 4 bit from ENV: '+str(script_args.use_4bit))
+if  environ.get('TRAIN_EVAL_DIR') is not None:    
+    script_args.train_eval_dir = environ.get('TRAIN_EVAL_DIR')
+    print('updated train eval Dir from ENV: '+script_args.train_eval_dir)
+
+if  environ.get('OUPUT_DIR') is not None:    
+    script_args.output_dir = environ.get('OUPUT_DIR')
+    print('updated output dir from ENV: '+script_args.output_dir)
+
+if  environ.get('BASE_MODEL') is not None:    
+    script_args.model_name = environ.get('BASE_MODEL')
+    print('updated base model from ENV: '+script_args.model_name)
 
 output_dir_exist = os.path.exists(script_args.output_dir)
 if not output_dir_exist:
