@@ -3,5 +3,6 @@ data/external_datasets/
 checkpoint*
 final_*
 CheungGuanaco.pkl
-
+runpodctl
 PhilArchive.jsonl
+tune_eval.sh
