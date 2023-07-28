@@ -4,13 +4,17 @@ import glob
 from tqdm import tqdm
 from functools import partial
 from sentence_transformers import SentenceTransformer
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer,AutoModelForCausalLM
 import numpy as np
 import transformers
 import torch
 import ast 
 from typing import List, Dict, Any, Callable, Union, Optional, Set
 import re
+import os
+from peft import AutoPeftModelForCausalLM
+import argparse
+
 
 class Evaluate():
     """
@@ -36,17 +40,19 @@ class Evaluate():
 
     def __init__(self,
                  model: str = "",
-                 samples_per_ds: int = 8):
+                 samples_per_ds: int = 30,
+                 lora: bool = True):
         
         self.samples_per_ds: int = samples_per_ds
-        self.model: str = model
-
+ 
+        
         self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(model)
+
         self.pipeline: pipeline = transformers.pipeline(
             "text-generation",
             model=model,
             torch_dtype=torch.float16,
-            device_map={"":0},
+            device_map= {"":0},
         )
 
         self.eval_dict: Dict[str, List[Union[str, float]]] = {'name':[],'instruction':[],'response':[],'prediction':[],'score':[]}
@@ -71,7 +77,7 @@ class Evaluate():
             inst_resp = sample.split('### assistant:')
 
             prompt = inst_resp[0] + '### assistant:'
-          
+ 
             prediction = self.pipeline(
             prompt,
             do_sample=False,
@@ -79,7 +85,7 @@ class Evaluate():
             top_p=0.9,
             num_return_sequences=1,
             eos_token_id=self.tokenizer.eos_token_id,
-            max_new_tokens = 900,
+            max_new_tokens = 500,
             return_full_text=False
             )[0]['generated_text']
 
@@ -355,7 +361,8 @@ def evaluate_arguments(response: str, prediction: str) -> Dict[str, int]:
             else: 
                 if response_label_dict[number].lower().strip() != 'o':
                     score_binary = 1
-
+                else: 
+                    score_binary = 0
 
                 resp_label = prediction_label_dict[number]
                 pred_label = response_label_dict[number]
@@ -419,7 +426,9 @@ def evaluate_redewiedergabe(response: str, prediction: str) -> Dict[str, float]:
 
                     score = calc_common_labels_score(prediction_label_dict[number],response_label_dict[number])
 
-                else: score = 0
+                else: 
+                    score = 0
+                    score_binary = 0
         else: 
             score = 0
             score_binary = 0
@@ -482,33 +491,85 @@ def write_readable_statistics(statistics,fname):
         
     result_df.to_csv('evaluation/'+fname+'.csv')
 
+def get_file_suffix() -> str:
+    """
+    This function checks all files in the ./evaluation directory, and finds the file with the highest 
+    numeric suffix. It then returns this highest number plus 1 as a string.
+    
+    Returns:
+        str: The highest number plus 1 found as a suffix in the file names.
+    """
+    
+    files: List[str] = glob.glob("./evaluation/*")
+
+    max_num: int = -1
+    for file in files: 
+        str_num: Optional[str] = extract_number(file)
+        if str_num is not None:
+            number: int = int(str_num)
+            if number > max_num:
+                max_num = number
+
+    return str(max_num+1)
+
 if __name__ == "__main__":
+
+    output_dir_exist = os.path.exists('evaluation')
+    if not output_dir_exist:
+
+        os.makedirs('evaluation')
+
+    suffix = get_file_suffix()
+
+    
+
+    CLI=argparse.ArgumentParser()
+    CLI.add_argument(
+    "--eval_dir", 
+    type=str,
+    default='data/train_test_datasets/run_1_Cheung/eval',  
+    )
+    CLI.add_argument(
+    "--models",  
+    nargs="*", 
+    type=str,
+    default=['results/Cheung10k7b64/final_merged_checkpoint/','results/DettmersAll7b64/final_merged_checkpoint/'],  # default if nothing is provided
+    )
+
+    args = CLI.parse_args()
+    
+
+    eval_folder = args.eval_dir #'data/train_test_datasets/run_1_Cheung/eval'
+
+    models = args.models #['results/run_1/final_merged_checkpoint/']
 
     sentence_model = SentenceTransformer('T-Systems-onsite/cross-en-de-roberta-sentence-transformer').to('cuda')
     evaluate_examples_sent = partial(evaluate_examples,sentence_model=sentence_model)
 
-
-    eval_folder = 'data/train_test_datasets/run_1_Cheung/eval'
-
-    models = ['results/run_1/final_merged_checkpoint/']
-
     statistics = {}
     for model in models: 
-        
-        model_name = model.split('/')[-2]
-   
+  
+        model_name = model.split('/')[1]
+
+        if model[-1] != '/':
+            model += '/'
+        print(model_name)
         eval = Evaluate(model)
 
-        eval.process_eval_files(eval_folder)
+        
 
+        eval.process_eval_files(eval_folder)
+        
+        
         eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds':evaluate_examples_sent})
 
-        write_readable_evaluation(eval.eval_dict,'evaluation_'+model_name)
+        write_readable_evaluation(eval.eval_dict,'evaluation_'+model_name+'_'+suffix)
 
         eval.create_score_statistics()
 
         statistics[model_name] = eval.statistics
 
-        
+        del eval
+        torch.cuda.empty_cache()
 
-    write_readable_statistics(statistics,'evaluation_statistics')
+    write_readable_statistics(statistics,'evaluation_statistics_'+suffix)

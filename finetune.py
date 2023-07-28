@@ -102,7 +102,7 @@ class ScriptArguments:
         metadata={"help": "Quantization type fp4 or nf4"},
     )
     num_train_epochs: Optional[int] = field(                                      ####epoch
-        default=8,
+        default=6,
         metadata={"help": "The number of training epochs for the reward model."},
     )
     fp16: Optional[bool] = field(
@@ -144,11 +144,11 @@ class ScriptArguments:
         metadata={"help": "Merge and push weights after training"},
     )
     output_dir: str = field(                                                 ##################################### model_dir
-        default="./results/OnlyBsp7b64",
+        default="./results/Cheung10k7b64",
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
     )
     train_eval_dir: str = field(
-        default="./data/train_test_datasets/run_4_onlybsp",                 ######################################### location of the train and eval dataset
+        default="./data/train_test_datasets/run_1_Cheung",                 ######################################### location of the train and eval dataset
         metadata={"help": "The directory of the train and eval datasets."},
     )
 
@@ -243,7 +243,7 @@ training_arguments = TrainingArguments(
     group_by_length=script_args.group_by_length,
     lr_scheduler_type=script_args.lr_scheduler_type,
     evaluation_strategy = 'steps',
-    eval_steps = 100,
+    eval_steps = 500,
     report_to = report_to
 )
 
@@ -287,7 +287,7 @@ def load_ds_from_folder(folder,tokenizer,shorten = {},concat = True):
 train_folder = script_args.train_eval_dir + '/train'
 eval_folder = script_args.train_eval_dir + '/eval'
 
-shorten_dict = {'CheungGuanaco':{'train':3404,'eval':379}}
+shorten_dict = {'CheungGuanaco':{'train':8000,'eval':600}}
 train_ds = load_ds_from_folder(train_folder,tokenizer,shorten=shorten_dict)
 test_ds = load_ds_from_folder(eval_folder,tokenizer,shorten=shorten_dict,concat=False)
 
@@ -318,7 +318,7 @@ trainer.train()
 if script_args.merge_and_push:
     output_dir = os.path.join(script_args.output_dir, "final_checkpoints")
     trainer.model.save_pretrained(output_dir)
-
+    tokenizer.save_pretrained(output_dir)
     # Free memory for merging weights
     del model
     torch.cuda.empty_cache()
