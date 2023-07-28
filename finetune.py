@@ -144,11 +144,11 @@ class ScriptArguments:
         metadata={"help": "Merge and push weights after training"},
     )
     output_dir: str = field(                                                 ##################################### model_dir
-        default="./results/Cheung10k7b64",
+        default="./results/noGuanaco7b64",
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
     )
     train_eval_dir: str = field(
-        default="./data/train_test_datasets/run_1_Cheung",                 ######################################### location of the train and eval dataset
+        default="./data/train_test_datasets/run_5_noGuanaco",                 ######################################### location of the train and eval dataset
         metadata={"help": "The directory of the train and eval datasets."},
     )
 
@@ -318,7 +318,9 @@ with open(script_args.output_dir+"/protocol.txt", "w") as file:
    
 # Fix weird overflow issue with fp16 training
 tokenizer.padding_side = "right"
-
+print('model')
+print(model)
+print(script_args.use_4_bit)
 trainer = SFTTrainer(
     model=model,
     train_dataset=train_ds,
