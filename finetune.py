@@ -27,7 +27,6 @@ import pandas as pd
 import torch
 from datasets import load_dataset, concatenate_datasets, Dataset
 from peft import LoraConfig
-from accelerate import Accelerator
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -75,7 +74,7 @@ class ScriptArguments:
     lora_r: Optional[int] = field(default=64*4)                               # lora r-> alpha*4
     max_seq_length: Optional[int] = field(default=4096)
     model_name: Optional[str] = field(
-        default="meta-llama/Llama-2-7b-hf",
+        default="tiiuae/falcon-7b",
         metadata={
             "help": "The model that you want to train from the Hugging Face hub. E.g. gpt2, gpt2-xl, bert, etc."
         }
@@ -222,7 +221,7 @@ def create_and_prepare_model(args):
 
     # Load the entire model on the GPU 0
     # switch to `device_map = "auto"` for multi-GPU
-    device_map = device_map={"": Accelerator().local_process_index}
+    device_map = 'auto'
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name, 
@@ -234,15 +233,26 @@ def create_and_prepare_model(args):
     
     # check: https://github.com/huggingface/transformers/pull/24906
     model.config.pretraining_tp = 1 
-
+    print('model_type')
+    print(list(model.config.architectures)[0])
     if script_args.use_lora:
-        peft_config = LoraConfig(
+        if 'falcon' in list(model.config.architectures)[0].lower():
+            peft_config = LoraConfig(
             lora_alpha=script_args.lora_alpha,
             lora_dropout=script_args.lora_dropout,
             r=script_args.lora_r,
+            target_modules=["query_key_value"],
             bias="none",
             task_type="CAUSAL_LM", 
-        )
+        )     
+        else:  
+            peft_config = LoraConfig(
+                lora_alpha=script_args.lora_alpha,
+                lora_dropout=script_args.lora_dropout,
+                r=script_args.lora_r,
+                bias="none",
+                task_type="CAUSAL_LM", 
+            )
     else: 
         peft_config = None
 
