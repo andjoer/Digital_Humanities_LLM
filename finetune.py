@@ -88,6 +88,10 @@ class ScriptArguments:
         default=False,
         metadata={"help": "Activate 8bit precision base model loading"},
     )
+    use_lora: Optional[bool] = field(
+        default=True,
+        metadata={"help": "Use Lora"},
+    )
     use_nested_quant: Optional[bool] = field(
         default=False,
         metadata={"help": "Activate nested quantization for 4bit base models"},
@@ -164,6 +168,10 @@ if  environ.get('LORA_ALPHA') is not None:
     script_args.lora_alpha = int(environ.get('LORA_ALPHA'))
     print('updated lora alpha from ENV: '+str(script_args.lora_alpha))
 
+if  environ.get('LORA_R') is not None:    
+    script_args.lora_r = int(environ.get('LORA_R'))
+    print('updated lora alpha from ENV: '+str(script_args.lora_r))
+
 if  environ.get('BITQ') is not None:    
     script_args.use_4bit = ast.literal_eval(environ.get('BITQ'))
     print('updated use 4 bit from ENV: '+str(script_args.use_4bit))
@@ -179,6 +187,10 @@ if  environ.get('OUPUT_DIR') is not None:
 if  environ.get('BASE_MODEL') is not None:    
     script_args.model_name = environ.get('BASE_MODEL')
     print('updated base model from ENV: '+script_args.model_name)
+
+if  environ.get('BITH') is not None:    
+    script_args.use_8bit = bool(environ.get('BASE_MODEL'))
+    print('updated base model from ENV: '+str(script_args.use_8bit))
 
 output_dir_exist = os.path.exists(script_args.output_dir)
 if not output_dir_exist:
@@ -218,13 +230,16 @@ def create_and_prepare_model(args):
     # check: https://github.com/huggingface/transformers/pull/24906
     model.config.pretraining_tp = 1 
 
-    peft_config = LoraConfig(
-        lora_alpha=script_args.lora_alpha,
-        lora_dropout=script_args.lora_dropout,
-        r=script_args.lora_r,
-        bias="none",
-        task_type="CAUSAL_LM", 
-    )
+    if script_args.use_lora:
+        peft_config = LoraConfig(
+            lora_alpha=script_args.lora_alpha,
+            lora_dropout=script_args.lora_dropout,
+            r=script_args.lora_r,
+            bias="none",
+            task_type="CAUSAL_LM", 
+        )
+    else: 
+        peft_config = None
 
     tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
