@@ -39,7 +39,7 @@ import glob
 from sft_trainer.sft_trainer_mod import SFTTrainer
 import ast
 from os import environ            # to interact with weights and biases
-
+import einops
 
 # This example fine-tunes Llama v2 model on Guanace dataset
 # using QLoRA. At the end of the script we perform merging the weights
@@ -51,7 +51,6 @@ from os import environ            # to interact with weights and biases
 # peft == 0.4.0
 # bitsandbytes == 0.40.2
 # transformers == 4.31.0
-# trl == 0.4.7
 
 # For models that have `config.pretraining_tp > 1` install:
 # pip install git+https://github.com/huggingface/transformers.git
@@ -164,9 +163,11 @@ script_args = parser.parse_args_into_dataclasses()[0]
 if  environ.get('LORA_ALPHA') is not None:    
     script_args.lora_alpha = int(environ.get('LORA_ALPHA'))
     print('updated lora alpha from ENV: '+str(script_args.lora_alpha))
+
 if  environ.get('BITQ') is not None:    
     script_args.use_4bit = ast.literal_eval(environ.get('BITQ'))
     print('updated use 4 bit from ENV: '+str(script_args.use_4bit))
+
 if  environ.get('TRAIN_EVAL_DIR') is not None:    
     script_args.train_eval_dir = environ.get('TRAIN_EVAL_DIR')
     print('updated train eval Dir from ENV: '+script_args.train_eval_dir)
@@ -210,7 +211,8 @@ def create_and_prepare_model(args):
         args.model_name, 
         quantization_config=bnb_config, 
         device_map=device_map, 
-        use_auth_token=True
+        use_auth_token=True,
+        trust_remote_code=True
     )
     
     # check: https://github.com/huggingface/transformers/pull/24906
@@ -267,8 +269,8 @@ training_arguments = TrainingArguments(
 
 model, peft_config, tokenizer = create_and_prepare_model(script_args)
 model.config.use_cache = False
-#dataset = load_dataset(script_args.dataset_name, split="train")
 
+# write all parameters into a protocol to double check
 protocol = [{k: v} for k, v in asdict(script_args).items()]
 
 
@@ -318,9 +320,7 @@ with open(script_args.output_dir+"/protocol.txt", "w") as file:
    
 # Fix weird overflow issue with fp16 training
 tokenizer.padding_side = "right"
-print('model')
-print(model)
-print(script_args.use_4bit)
+
 trainer = SFTTrainer(
     model=model,
     train_dataset=train_ds,
