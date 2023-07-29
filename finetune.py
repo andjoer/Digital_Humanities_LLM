@@ -236,7 +236,7 @@ def create_and_prepare_model(args):
     print('model_type')
     print(list(model.config.architectures)[0])
     if script_args.use_lora:
-        if 'falcon' in list(model.config.architectures)[0].lower():
+        if 'falcon' in script_args.model_name:
             peft_config = LoraConfig(
             lora_alpha=script_args.lora_alpha,
             lora_dropout=script_args.lora_dropout,
