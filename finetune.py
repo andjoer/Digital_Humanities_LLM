@@ -189,8 +189,12 @@ if  environ.get('BASE_MODEL') is not None:
     print('updated base model from ENV: '+script_args.model_name)
 
 if  environ.get('BITH') is not None:    
-    script_args.use_8bit = bool(environ.get('BASE_MODEL'))
-    print('updated base model from ENV: '+str(script_args.use_8bit))
+    script_args.use_8bit = ast.literal_eval(environ.get('BASE_MODEL'))
+    print('updated use_8bit from ENV: '+str(script_args.use_8bit))
+
+if  environ.get('USE_LORA') is not None:    
+    script_args.use_lora = ast.literal_eval(environ.get('USE_LORA'))
+    print('updated use_lora from ENV: '+str(script_args.lora))
 
 output_dir_exist = os.path.exists(script_args.output_dir)
 if not output_dir_exist:
