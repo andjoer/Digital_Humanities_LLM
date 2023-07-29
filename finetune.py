@@ -27,6 +27,7 @@ import pandas as pd
 import torch
 from datasets import load_dataset, concatenate_datasets, Dataset
 from peft import LoraConfig
+from accelerate import Accelerator
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -221,7 +222,7 @@ def create_and_prepare_model(args):
 
     # Load the entire model on the GPU 0
     # switch to `device_map = "auto"` for multi-GPU
-    device_map = 'auto'
+    device_map = device_map={"": Accelerator().local_process_index}
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name, 
