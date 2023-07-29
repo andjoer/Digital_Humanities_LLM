@@ -205,7 +205,7 @@ def create_and_prepare_model(args):
 
     # Load the entire model on the GPU 0
     # switch to `device_map = "auto"` for multi-GPU
-    device_map = {"":0}
+    device_map = {'auto'}
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name, 
