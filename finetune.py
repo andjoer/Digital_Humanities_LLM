@@ -189,7 +189,7 @@ if  environ.get('BASE_MODEL') is not None:
     print('updated base model from ENV: '+script_args.model_name)
 
 if  environ.get('BITH') is not None:    
-    script_args.use_8bit = ast.literal_eval(environ.get('BASE_MODEL'))
+    script_args.use_8bit = ast.literal_eval(environ.get('BITH'))
     print('updated use_8bit from ENV: '+str(script_args.use_8bit))
 
 if  environ.get('USE_LORA') is not None:    
