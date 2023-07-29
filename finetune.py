@@ -194,7 +194,7 @@ if  environ.get('BITH') is not None:
 
 if  environ.get('USE_LORA') is not None:    
     script_args.use_lora = ast.literal_eval(environ.get('USE_LORA'))
-    print('updated use_lora from ENV: '+str(script_args.lora))
+    print('updated use_lora from ENV: '+str(script_args.use_lora))
 
 output_dir_exist = os.path.exists(script_args.output_dir)
 if not output_dir_exist:
