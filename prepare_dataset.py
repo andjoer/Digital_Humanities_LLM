@@ -175,9 +175,11 @@ class PrepareDataset:
         #self.train_dataset = concatenate_datasets(ds_list_train).shuffle(seed=42)
         #self.test_dataset = concatenate_datasets(ds_dict_test).shuffle(seed=42)
 
-def save_ds_list(ds_list, folder):
+def save_ds_list(ds_list, folder,suffix=""):
+    if suffix:
+        suffix ='_'+suffix
     for ds_name in ds.test_dataset.keys():
-        with open(folder+'/'+ds_name+'.pkl', 'wb') as handle:
+        with open(folder+'/'+ds_name+suffix+'.pkl', 'wb') as handle:
             pickle.dump(ds_list[ds_name], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
@@ -189,8 +191,8 @@ if __name__ == "__main__":
     train_folder = 'data/dataset_processed/train'
     eval_folder = 'data/dataset_processed/eval'
    
-    save_ds_list(ds.train_dataset,train_folder)
-    save_ds_list(ds.test_dataset,eval_folder)
+    save_ds_list(ds.train_dataset,train_folder,suffix='train')
+    save_ds_list(ds.test_dataset,eval_folder,suffix='eval')
 
     text = ''
     for item in ds.test_dataset.values():

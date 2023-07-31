@@ -1,8 +1,10 @@
-##################################################################
+#######################################################################
 # Modified version of the sft_trainer
 # It now is possible to submit multiple evaluation datasets
+# It overwrites the get_eval_dataloader and get_train_dataloader
+# -> it is possible to use different data collators for train and eval
 # Original license below
-#################################################################
+#######################################################################
 # Copyright 2023 The HuggingFace Team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,11 +38,33 @@ from transformers.trainer_callback import TrainerCallback
 from transformers.trainer_utils import EvalPrediction
 
 from .sft_utils import ConstantLengthDataset, DataCollatorForCompletionOnlyLM, PeftSavingCallback
-
-
+from torch.utils.data import DataLoader
+import random
+import numpy as np
+import re
 
 from peft import PeftConfig, PeftModel, get_peft_model, prepare_model_for_int8_training
 
+
+def set_seed(seed: int):
+    """
+    Helper function for reproducible behavior to set the seed in `random`, `numpy`, `torch` and/or `tf` (if installed).
+
+    Args:
+        seed (`int`): The seed to set.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+def seed_worker(_):
+    """
+    Helper function to set worker seed during Dataloader initialization.
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    set_seed(worker_seed)
 
 class SFTTrainer(Trainer):
     r"""
@@ -100,6 +124,8 @@ class SFTTrainer(Trainer):
         model: Union[PreTrainedModel, nn.Module, str] = None,
         args: TrainingArguments = None,
         data_collator: Optional[DataCollator] = None,
+        eval_data_collator: Optional[DataCollator] = None,
+        train_data_collator: Optional[DataCollator] = None,
         train_dataset: Optional[Dataset] = None,
         eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
         tokenizer: Optional[PreTrainedTokenizerBase] = None,
@@ -115,7 +141,7 @@ class SFTTrainer(Trainer):
         max_seq_length: Optional[int] = None,
         infinite: Optional[bool] = False,
         num_of_sequences: Optional[int] = 1024,
-        chars_per_token: Optional[float] = 3.6,
+        chars_per_token: Optional[float] = 3.6
     ):
         if isinstance(model, str):
             warnings.warn(
@@ -123,7 +149,17 @@ class SFTTrainer(Trainer):
                 "`AutoModelForCausalLM` or a `PeftModel` (if you passed a `peft_config`) for you."
             )
 
-        if packing and data_collator is not None and isinstance(data_collator, DataCollatorForCompletionOnlyLM):
+        self.eval_data_collator = eval_data_collator
+        self.train_data_collator = train_data_collator
+
+        if data_collator is not None: 
+            if self.eval_data_collator is None: 
+                self.eval_data_collator = data_collator
+            if self.train_data_collator is None:
+                self.train_data_collator = data_collator
+
+
+        if packing and (eval_data_collator is not None or train_data_collator is not None) and (isinstance(eval_data_collator, DataCollatorForCompletionOnlyLM)or isinstance(train_data_collator, DataCollatorForCompletionOnlyLM)):
             raise ValueError(
                 "You passed a `DataCollatorForCompletionOnlyLM` to the SFTTrainer. This is not compatible with the `packing` argument."
             )
@@ -173,6 +209,12 @@ class SFTTrainer(Trainer):
             if data_collator is None:
                 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
+            if eval_data_collator is None:
+                self.eval_data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+
+            if train_data_collator is None:
+                self.train_data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+
         if train_dataset is not None:
             train_dataset = self._prepare_dataset(
                 train_dataset,
@@ -201,7 +243,7 @@ class SFTTrainer(Trainer):
         super().__init__(
             model=model,
             args=args,
-            data_collator=data_collator,
+            data_collator=eval_data_collator,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             tokenizer=tokenizer,
@@ -219,6 +261,81 @@ class SFTTrainer(Trainer):
             self.train_dataset.infinite = True
         elif self.args.max_steps == -1 and packing:
             self.train_dataset.infinite = False
+            
+    
+    def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None) -> DataLoader:
+        """
+        Returns the evaluation [`~torch.utils.data.DataLoader`].
+
+        Subclass and override this method if you want to inject some custom behavior.
+
+        Args:
+            eval_dataset (`torch.utils.data.Dataset`, *optional*):
+                If provided, will override `self.eval_dataset`. If it is a [`~datasets.Dataset`], columns not accepted
+                by the `model.forward()` method are automatically removed. It must implement `__len__`.
+        """
+
+        if eval_dataset is None and self.eval_dataset is None:
+            raise ValueError("Trainer: evaluation requires an eval_dataset.")
+        eval_dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
+        data_collator = self.eval_data_collator
+
+        if isinstance(eval_dataset, Dataset):
+            eval_dataset = self._remove_unused_columns(eval_dataset, description="evaluation")
+        else:
+            data_collator = self._get_collator_with_removed_columns(data_collator, description="evaluation")
+
+        dataloader_params = {
+            "batch_size": self.args.eval_batch_size,
+            "collate_fn": data_collator,
+            "num_workers": self.args.dataloader_num_workers,
+            "pin_memory": self.args.dataloader_pin_memory,
+        }
+
+        if not isinstance(eval_dataset, torch.utils.data.IterableDataset):
+            dataloader_params["sampler"] = self._get_eval_sampler(eval_dataset)
+            dataloader_params["drop_last"] = self.args.dataloader_drop_last
+
+        return self.accelerator.prepare(DataLoader(eval_dataset, **dataloader_params))
+    
+    def get_train_dataloader(self) -> DataLoader:
+        """
+        Returns the training [`~torch.utils.data.DataLoader`].
+
+        Will use no sampler if `train_dataset` does not implement `__len__`, a random sampler (adapted to distributed
+        training if necessary) otherwise.
+
+        Subclass and override this method if you want to inject some custom behavior.
+        """
+
+        if self.train_dataset is None:
+            raise ValueError("Trainer: training requires a train_dataset.")
+
+        train_dataset = self.train_dataset
+        data_collator = self.train_data_collator
+
+        if  isinstance(train_dataset, Dataset):
+            train_dataset = self._remove_unused_columns(train_dataset, description="training")
+        else:
+            data_collator = self._get_collator_with_removed_columns(data_collator, description="training")
+
+        dataloader_params = {
+            "batch_size": self._train_batch_size,
+            "collate_fn": data_collator,
+            "num_workers": self.args.dataloader_num_workers,
+            "pin_memory": self.args.dataloader_pin_memory,
+        }
+
+        if not isinstance(train_dataset, torch.utils.data.IterableDataset):
+
+            print('enter special##########')
+            dataloader_params["sampler"] = self._get_train_sampler()
+            dataloader_params["drop_last"] = self.args.dataloader_drop_last
+            dataloader_params["worker_init_fn"] = seed_worker
+
+
+        return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
+    
 
     def _prepare_dataset(
         self,
@@ -266,6 +383,8 @@ class SFTTrainer(Trainer):
             "You need to pass a `dataset_text_field` or `formatting_func` argument to the SFTTrainer if you want to use the `ConstantLengthDataset`."
         )
 
+    
+    
     def _prepare_non_packed_dataloader(
         self, tokenizer, dataset, dataset_text_field, max_seq_len, formatting_func=None
     ):

@@ -72,32 +72,44 @@ class DataCollatorForCompletionOnlyLM(DataCollatorForLanguageModeling):
         self.response_template = response_template
         self.ignore_index = ignore_index
 
-    def torch_call(self, examples: List[Union[List[int], Any, Dict[str, Any]]]) -> Dict[str, Any]:
-        batch = super().torch_call(examples)
+    def replace_lables(self,examples,batch,labels,response_token_ids_lst,i):
 
-        # The prompt ends with the response key plus a newline.  We encode this and then try to find it in the
-        # sequence of tokens.  This should just be a single token.
-        response_token_ids = self.tokenizer.encode(self.response_template, add_special_tokens=False)
+        for response_token_ids in response_token_ids_lst:
 
-        labels = batch["labels"].clone()
-
-        for i in range(len(examples)):
             response_token_ids_start_idx = None
 
             for idx in np.where(batch["labels"][i] == response_token_ids[0])[0]:
                 # `response_token_ids` is `'### Response:\n'`, here we are just making sure that the token IDs match
+
                 if response_token_ids == examples[i]["input_ids"][idx : idx + len(response_token_ids)]:
                     response_token_ids_start_idx = idx
 
-            if response_token_ids_start_idx is None:
-                raise RuntimeError(
-                    f'Could not find response key {response_token_ids} in token IDs {batch["labels"][i]}'
-                )
 
-            response_token_ids_end_idx = response_token_ids_start_idx + len(response_token_ids)
+            if response_token_ids_start_idx is not None:
+            
+                response_token_ids_end_idx = response_token_ids_start_idx + len(response_token_ids)
 
-            # Make pytorch loss function ignore all tokens up through the end of the response key
-            labels[i, :response_token_ids_end_idx] = self.ignore_index
+                # Make pytorch loss function ignore all tokens up through the end of the response key
+                labels[i, :response_token_ids_end_idx] = self.ignore_index
+                return labels
+        return None
+
+    def torch_call(self, examples: List[Union[List[int], Any, Dict[str, Any]]]) -> Dict[str, Any]:
+        batch = super().torch_call(examples)
+
+        response_token_ids_lst = [self.tokenizer.encode(self.response_template, add_special_tokens=False)]
+        response_token_ids_lst += [self.tokenizer.encode('\n'+self.response_template, add_special_tokens=False)[2:]]      #llama tokenizer pulls together '\n' and next word
+
+        labels = batch["labels"].clone()
+        for i in range(len(examples)):
+            updated_labels = self.replace_lables(examples,batch,labels,response_token_ids_lst,i)  
+
+            if updated_labels is not None: 
+                labels = updated_labels
+
+            else: 
+                print('did not find response key')
+                print(self.tokenizer.decode(list(examples[i]["input_ids"]))) 
 
         batch["labels"] = labels
 

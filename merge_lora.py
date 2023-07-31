@@ -7,7 +7,7 @@ from peft import AutoPeftModelForCausalLM
 import torch
 from tqdm import tqdm
 
-input_dirs = ['./results/run_1/checkpoint-1000','./results/OnlyBsp7b16/checkpoint-1000']
+input_dirs = ['./results/OnlyBspSimple7b64/checkpoint-300']
 
 for input_dir in tqdm(input_dirs):
     output_merged_dir = input_dir + '-merged'

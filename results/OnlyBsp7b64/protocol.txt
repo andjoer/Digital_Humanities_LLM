@@ -7,15 +7,16 @@ max_grad_norm: 0.3
 weight_decay: 0.001
 lora_alpha: 64
 lora_dropout: 0.1
-lora_r: 256
+lora_r: 512
 max_seq_length: 4096
 model_name: meta-llama/Llama-2-7b-hf
 use_4bit: True
 use_8bit: False
+use_lora: True
 use_nested_quant: False
 bnb_4bit_compute_dtype: float16
 bnb_4bit_quant_type: nf4
-num_train_epochs: 8
+num_train_epochs: 4
 fp16: False
 bf16: True
 packing: False
@@ -25,12 +26,15 @@ lr_scheduler_type: constant
 max_steps: 10000
 warmup_ratio: 0.01
 group_by_length: True
-save_steps: 1000
+save_steps: 100
 logging_steps: 10
 merge_and_push: True
 output_dir: ./results/OnlyBsp7b64
 train_eval_dir: ./data/train_test_datasets/run_4_onlybsp
 wnb_project: LLama
+eval_collator: completion
+train_collator: all
+eval_steps: 100
 Dataset: train bsp_ds: Dataset({
     features: ['text'],
     num_rows: 506

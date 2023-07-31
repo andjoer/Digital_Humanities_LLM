@@ -40,7 +40,7 @@ class Evaluate():
 
     def __init__(self,
                  model: str = "",
-                 samples_per_ds: int = 30,
+                 samples_per_ds: int = 60,
                  lora: bool = True):
         
         self.samples_per_ds: int = samples_per_ds
@@ -85,7 +85,7 @@ class Evaluate():
             top_p=0.9,
             num_return_sequences=1,
             eos_token_id=self.tokenizer.eos_token_id,
-            max_new_tokens = 500,
+            max_new_tokens = 400,
             return_full_text=False
             )[0]['generated_text']
 
@@ -233,7 +233,14 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
 
             if key.lower() == 'wiedergabeform':
 
-                if (prediction.lower() == 'erzählstimme' or response_dict[key] == 'erzählstimme') or (prediction.lower() != 'erzählstimme' or response_dict[key] != 'erzählstimme'):
+                if (prediction.lower() == 'erzählstimme' and response_dict[key] == 'erzählstimme') or (prediction.lower() != 'erzählstimme' and response_dict[key] != 'erzählstimme'):
+                    scores['wiedergabe_binary'] = 1
+                else: 
+                    scores['wiedergabe_binary'] = 0
+
+            if key.lower() == 'erzählposition':
+
+                if ('auktorial' in prediction.lower()  and  'auktorial' in response_dict[key]) or ('personal' in prediction.lower()  and  'personal' in response_dict[key]):
                     scores['wiedergabe_binary'] = 1
                 else: 
                     scores['wiedergabe_binary'] = 0
@@ -527,15 +534,20 @@ if __name__ == "__main__":
     CLI.add_argument(
     "--eval_dir", 
     type=str,
-    default='data/train_test_datasets/run_1_Cheung/eval',  
+    default='data/train_test_datasets/run_6_onlybsp_simple/eval',  
     )
     CLI.add_argument(
     "--models",  
     nargs="*", 
     type=str,
-    default=['./results/Cheung10k7b64/final_merged_checkpoint/','./results/DettmersAll7b64/final_merged_checkpoint/'],  # default if nothing is provided
+    default=['./results/OnlyBspSimple7b64/checkpoint-300-merged'],  # default if nothing is provided
     )
 
+    CLI.add_argument(
+    "--samples", 
+    type=int,
+    default='70',  
+    )
     args = CLI.parse_args()
     
 
@@ -543,12 +555,17 @@ if __name__ == "__main__":
 
     models = args.models #['results/run_1/final_merged_checkpoint/']
 
+    samples = args.samples
+
     if  environ.get('EVAL_DIR') is not None:    
         eval_folder= environ.get('EVAL_DIR')
         print('updated eval_dir from ENV: '+str(eval_folder))
     if  environ.get('MODELS') is not None:    
         models = [environ.get('MODELS')]
         print('updated models from ENV: '+str(models))
+    if  environ.get('EVAL_SAMPLES') is not None:    
+        samples = int(environ.get('EVAL_SAMPLES'))
+        print('updated models from ENV: '+str(samples))
 
     sentence_model = SentenceTransformer('T-Systems-onsite/cross-en-de-roberta-sentence-transformer').to('cuda')
     evaluate_examples_sent = partial(evaluate_examples,sentence_model=sentence_model)
@@ -557,18 +574,22 @@ if __name__ == "__main__":
     for model in models: 
   
         model_name = model.split('/')[2]
+        model_ckpt = extract_number(model.split('/')[3])
+
+        if model_ckpt is not None:
+            model_name += '_'+model_ckpt
 
         if model[-1] != '/':
             model += '/'
         print(model_name)
-        eval = Evaluate(model)
+        eval = Evaluate(model,samples_per_ds=samples)
 
         
 
         eval.process_eval_files(eval_folder)
         
         
-        eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds':evaluate_examples_sent})
+        eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds':evaluate_examples_sent,'bsp_ds_simple_eval':evaluate_examples_sent})
 
         write_readable_evaluation(eval.eval_dict,'evaluation_'+model_name+'_'+suffix)
 

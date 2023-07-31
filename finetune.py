@@ -27,6 +27,7 @@ import pandas as pd
 import torch
 from datasets import load_dataset, concatenate_datasets, Dataset
 from peft import LoraConfig
+import re
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -34,9 +35,10 @@ from transformers import (
     HfArgumentParser,
     AutoTokenizer,
     TrainingArguments,
+    DataCollatorForLanguageModeling
 )
 import glob
-from sft_trainer.sft_trainer_mod import SFTTrainer
+from sft_trainer.sft_trainer_mod import SFTTrainer, DataCollatorForCompletionOnlyLM
 import ast
 from os import environ            # to interact with weights and biases
 import einops
@@ -71,10 +73,10 @@ class ScriptArguments:
     weight_decay: Optional[int] = field(default=0.001)
     lora_alpha: Optional[int] = field(default=64)                           # lora alpha
     lora_dropout: Optional[float] = field(default=0.1)
-    lora_r: Optional[int] = field(default=64*4)                               # lora r-> alpha*4
+    lora_r: Optional[int] = field(default=512)                               # lora r-> alpha*4
     max_seq_length: Optional[int] = field(default=4096)
     model_name: Optional[str] = field(
-        default="tiiuae/falcon-7b",
+        default="meta-llama/Llama-2-7b-chat-hf",
         metadata={
             "help": "The model that you want to train from the Hugging Face hub. E.g. gpt2, gpt2-xl, bert, etc."
         }
@@ -140,14 +142,14 @@ class ScriptArguments:
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
         },
     )
-    save_steps: int = field(default=1000, metadata={"help": "Save checkpoint every X updates steps."})
+    save_steps: int = field(default=200, metadata={"help": "Save checkpoint every X updates steps."})
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     merge_and_push: Optional[bool] = field(
         default=True,
         metadata={"help": "Merge and push weights after training"},
     )
     output_dir: str = field(                                                 ##################################### model_dir
-        default="./results/noGuanaco7b64",
+        default="./results/noGunacoChat7b64",
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
     )
     train_eval_dir: str = field(
@@ -160,6 +162,19 @@ class ScriptArguments:
         metadata={"help": "Project name for weights and biases"},
     )
 
+    eval_collator: str = field(                                                   # eval data collator
+        default="completion",
+        metadata={"help": "Data collator for the evaluation dataset"},
+    )
+
+    train_collator: str = field(                                                   # train data collator
+        default="all",
+        metadata={"help": "Data collator for the training dataset"},
+    )
+    eval_steps: int = field(                                                   # train data collator
+        default=100,
+        metadata={"help": "Steps between the evaluations"},
+    )
 
 parser = HfArgumentParser(ScriptArguments)
 script_args = parser.parse_args_into_dataclasses()[0]
@@ -195,6 +210,24 @@ if  environ.get('BITH') is not None:
 if  environ.get('USE_LORA') is not None:    
     script_args.use_lora = ast.literal_eval(environ.get('USE_LORA'))
     print('updated use_lora from ENV: '+str(script_args.use_lora))
+
+if  environ.get('EVAL_COLLATOR') is not None:    
+    script_args.eval_collator = environ.get('EVAL_COLLATOR')
+    print('updated base model from ENV: '+script_args.eval_collator)
+
+if  environ.get('TRAIN_COLLATOR') is not None:    
+    script_args.train_collator = environ.get('TRAIN_COLLATOR')
+    print('updated base model from ENV: '+script_args.train_collator)
+
+if  environ.get('EVAL_STEPS') is not None:    
+    script_args.eval_steps = int(environ.get('EVAL_STEPS'))
+    print('updated base model from ENV: '+ str(script_args.eval_steps))
+
+
+if  environ.get('SAVE_STEPS') is not None:    
+    script_args.save_steps = int(environ.get('SAVE_STEPS'))
+    print('updated base model from ENV: '+ str(script_args.save_steps))
+
 
 output_dir_exist = os.path.exists(script_args.output_dir)
 if not output_dir_exist:
@@ -233,8 +266,7 @@ def create_and_prepare_model(args):
     
     # check: https://github.com/huggingface/transformers/pull/24906
     model.config.pretraining_tp = 1 
-    print('model_type')
-    print(list(model.config.architectures)[0])
+
     if script_args.use_lora:
         if 'falcon' in script_args.model_name:
             peft_config = LoraConfig(
@@ -293,13 +325,32 @@ training_arguments = TrainingArguments(
     group_by_length=script_args.group_by_length,
     lr_scheduler_type=script_args.lr_scheduler_type,
     evaluation_strategy = 'steps',
-    eval_steps = 500,
+    eval_steps = script_args.eval_steps,
     report_to = report_to
 )
 
 model, peft_config, tokenizer = create_and_prepare_model(script_args)
 model.config.use_cache = False
+#############################################################################################
+# collator
+response_template = '### assistant:'
 
+if script_args.eval_collator == 'all':
+    eval_data_collator = None
+
+elif script_args.eval_collator == 'completion':
+    eval_data_collator = DataCollatorForCompletionOnlyLM(response_template,tokenizer)
+else:
+    eval_data_collator = None
+
+if script_args.train_collator == 'all':
+    train_data_collator = None
+
+elif script_args.train_collator == 'completion':
+    train_data_collator = DataCollatorForCompletionOnlyLM(response_template,tokenizer)
+else:
+    train_data_collator = None
+#############################################################################################
 # write all parameters into a protocol to double check
 protocol = [{k: v} for k, v in asdict(script_args).items()]
 
@@ -337,11 +388,19 @@ def load_ds_from_folder(folder,tokenizer,shorten = {},concat = True):
 train_folder = script_args.train_eval_dir + '/train'
 eval_folder = script_args.train_eval_dir + '/eval'
 
-shorten_dict = {'CheungGuanaco':{'train':8000,'eval':600}}
+def formatting_func(string):
+    return re.sub('### Assistant','### assistant',string)
+
+
+shorten_dict = {'CheungGuanaco':{'train':40000,'eval':200}}
 train_ds = load_ds_from_folder(train_folder,tokenizer,shorten=shorten_dict)
 test_ds = load_ds_from_folder(eval_folder,tokenizer,shorten=shorten_dict,concat=False)
 
 print('Model and checkpoints will be saved at: ' +script_args.output_dir)
+print('#### lora config ####')
+print(peft_config)
+print('####')
+print(LoraConfig)
 
 with open(script_args.output_dir+"/protocol.txt", "w") as file:
     for dictionary in protocol:
@@ -355,12 +414,15 @@ trainer = SFTTrainer(
     model=model,
     train_dataset=train_ds,
     eval_dataset=test_ds,
+    train_data_collator = train_data_collator,
+    eval_data_collator=eval_data_collator,
     peft_config=peft_config,
     dataset_text_field="text",
     max_seq_length=script_args.max_seq_length,
     tokenizer=tokenizer,
     args=training_arguments,
     packing=script_args.packing,
+    formatting_func=formatting_func
 )
 
 trainer.train()
