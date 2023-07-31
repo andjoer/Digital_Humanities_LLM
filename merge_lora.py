@@ -3,11 +3,17 @@ from transformers import (
     HfArgumentParser,
     AutoTokenizer
 )
+from os import environ
+
 from peft import AutoPeftModelForCausalLM
 import torch
 from tqdm import tqdm
 
 input_dirs = ['./results/OnlyBspSimple7b64/checkpoint-300']
+
+if  environ.get('INPUT_DIR') is not None:    
+    input_dirs = [environ.get('INPUT_DIRS')]
+    print('updated models from ENV: '+str(input_dirs))
 
 for input_dir in tqdm(input_dirs):
     output_merged_dir = input_dir + '-merged'

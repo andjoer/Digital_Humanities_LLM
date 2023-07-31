@@ -233,17 +233,17 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
 
             if key.lower() == 'wiedergabeform':
 
-                if (prediction.lower() == 'erzählstimme' and response_dict[key] == 'erzählstimme') or (prediction.lower() != 'erzählstimme' and response_dict[key] != 'erzählstimme'):
+                if (prediction.lower() == 'erzählstimme' and response_dict[key].lower() == 'erzählstimme') or (prediction.lower() != 'erzählstimme' and response_dict[key].lower() != 'erzählstimme'):
                     scores['wiedergabe_binary'] = 1
                 else: 
                     scores['wiedergabe_binary'] = 0
 
             if key.lower() == 'erzählposition':
 
-                if ('auktorial' in prediction.lower()  and  'auktorial' in response_dict[key]) or ('personal' in prediction.lower()  and  'personal' in response_dict[key]):
-                    scores['wiedergabe_binary'] = 1
+                if ('auktorial' in prediction.lower()  and  'auktorial' in response_dict[key].lower()) or ('personal' in prediction.lower()  and  'personal' in response_dict[key].lower()):
+                    scores['erzählposition_binary'] = 1
                 else: 
-                    scores['wiedergabe_binary'] = 0
+                    scores['erzählposition_binary'] = 0
 
         else: 
             scores[key] = 0
