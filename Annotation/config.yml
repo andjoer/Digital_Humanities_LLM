@@ -21,3 +21,9 @@ categories:
 edit_prompt: true
 answers: true
 default_prompt: "Classify the following spans"
+
+
+# Specify the columns to read for annotation
+text_columns:
+  - "text1"
+  - "text2"

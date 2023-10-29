@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 import yaml
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QPushButton, QCheckBox, QVBoxLayout, QWidget, QTabWidget, QGridLayout, QHBoxLayout, QLabel, QMessageBox
@@ -11,10 +11,10 @@ import pickle
 
 @dataclass
 class Annotation:
-    text: str
+    text: List[str]  # list of texts for multiple fields
     mode: str  # 'categorize' or 'answer'
     categories: List[str] = field(default_factory=list)
-    spans: List[Tuple[int, int]] = field(default_factory=list)  # [(start, end), ...]
+    spans: Dict[int, List[Tuple[int, int]]] = field(default_factory=dict)  # key: index of text, value: list of (start, end) spans
     answer: Optional[str] = None
     prompt: Optional[str] = None
     skip: bool = False
@@ -40,7 +40,7 @@ class AnnotationApp(QMainWindow):
         self.subtextfields = []
         self.textfield_to_label = {} 
         self.checkboxes = []
-        self.selected_spans = []
+        self.selected_spans = {}
         self.current_idx = 0
 
         self.tabs = QTabWidget(self)
@@ -57,14 +57,6 @@ class AnnotationApp(QMainWindow):
         self.open_file_btn.clicked.connect(self.open_file)
         file_handling_layout.addWidget(self.open_file_btn)
 
-        # Dropdown for column selection
-        self.column_dropdown = QComboBox(self)
-        file_handling_layout.addWidget(self.column_dropdown)
-        self.column_dropdown.hide()
-
-        self.load_btn = QPushButton('Load', self)
-        self.load_btn.clicked.connect(self.handle_column_selection)
-        file_handling_layout.addWidget(self.load_btn)
 
         # Inside the init_ui method, under the file handling tab layout
         self.save_annotations_btn = QPushButton('Save Annotations', self)
@@ -80,9 +72,17 @@ class AnnotationApp(QMainWindow):
         annotation_layout = QVBoxLayout(self.annotation_tab) 
 
         # Text display area
-        self.text_display = QTextEdit(self)
-        #self.text_display.setText(self.annotations[self.current_idx].text)
-        annotation_layout.addWidget(self.text_display)
+        self.text_displays = []  # List to hold the QTextEdit widgets
+
+        for col_name in (self.config['text_columns']):
+            label = QLabel(col_name, self)  # Adding a label for clarity
+            annotation_layout.addWidget(label)
+
+            text_edit = QTextEdit(self)
+            self.text_displays.append(text_edit)
+            annotation_layout.addWidget(text_edit)
+      
+
         if self.config.get('edit_prompt', False):
             self.prompt_field = QTextEdit(self)
             annotation_layout.addWidget(self.prompt_field)
@@ -97,7 +97,8 @@ class AnnotationApp(QMainWindow):
             # Initialize dictionaries to store the relationship between textfields and their labels
             self.textfield_to_label = {}  # For main categories
             self.subtextfield_to_label = {}  # For subcategories
-
+            self.sub_checkboxes = []
+            self.main_cat_children ={}
             for row_idx, category_dict in enumerate(self.config['categories']):
                 # Handle the main category
                 category_type = category_dict.get('type', 'checkbox')  # Default to checkbox if not specified
@@ -130,18 +131,21 @@ class AnnotationApp(QMainWindow):
                     # Create a widget to hold the subcategories
                     subcategories_widget = QWidget(self)
                     subcategory_layout = QHBoxLayout(subcategories_widget)
-
+                    self.main_cat_children[category_dict['name']] = []
                     for subcategory in category_dict['subcategories']:
                         sub_checkbox = QCheckBox(subcategory['name'], self)
-                        self.checkboxes.append(sub_checkbox)
+                        self.sub_checkboxes.append(sub_checkbox)
                         sub_checkbox.stateChanged.connect(lambda state, lbl=category_label: self.update_category_label(state, lbl))
                         subcategory_layout.addWidget(sub_checkbox)
-
+                        
+                        child = [sub_checkbox]
                         if subcategory.get('textfield'):
                             sub_textfield = QLineEdit(self)
                             subcategory_layout.addWidget(sub_textfield)
                             self.subtextfields.append(sub_textfield)
                             self.subtextfield_to_label[sub_textfield] = category_dict['name']  # Map sub-textfield to main category label
+                            child.append(sub_textfield )
+                        self.main_cat_children[category_dict['name']].append(child)   # child: [checkbox, textfield] or [checkbox]
 
                     categories_grid_layout.addWidget(subcategories_widget, row_idx, 1)
 
@@ -168,7 +172,7 @@ class AnnotationApp(QMainWindow):
                 self.annotate_other_span_btn.clicked.connect(self.handle_annotate_other_span)
                 annotation_layout.addWidget(self.annotate_other_span_btn)
 
-                self.selected_spans = []
+                self.selected_spans = {}
 
         if self.config['answers']:
             self.answer_field = QTextEdit(self)
@@ -203,94 +207,114 @@ class AnnotationApp(QMainWindow):
         self.setWindowTitle('Text Annotation App')
         self.show()
 
+    
     def update_category_label(self, state, label):
         bold_font = QFont()
         bold_font.setBold(state == Qt.Checked)
         label.setFont(bold_font)
 
     def handle_span_selection(self):
-        cursor = self.text_display.textCursor()
-        start = cursor.selectionStart()
-        end = cursor.selectionEnd()
+        # Identify which QTextEdit the cursor event came from
+        #active_text_display = self.focusWidget()  # This should return the QTextEdit that has the focus
+        #if not isinstance(active_text_display, QTextEdit):
+           # return
 
-        # Check if a valid span is selected
-        if start != end:
-            self.selected_spans.append((start, end))
-            
-            # Highlight the selected span
-            highlight_format = QTextCharFormat()
-            highlight_format.setBackground(QColor('yellow'))
-            cursor.mergeCharFormat(highlight_format)
-            self.text_display.mergeCurrentCharFormat(highlight_format)
+        #idx = self.text_displays.index(active_text_display)
+        for active_text_display in self.text_displays:
+            idx = self.text_displays.index(active_text_display)
 
-            # Optionally, you can clear the selection after highlighting
-            cursor.clearSelection()
-            self.text_display.setTextCursor(cursor)
+            cursor = active_text_display.textCursor()
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+
+            # Check if a valid span is selected
+            if start != end:
+               
+                if idx not in self.selected_spans:
+                    self.selected_spans[idx] = []
+                self.selected_spans[idx].append((start, end))
+        
+                
+                # Highlight the selected span
+                highlight_format = QTextCharFormat()
+                highlight_format.setBackground(QColor('yellow'))
+                cursor.mergeCharFormat(highlight_format)
+                active_text_display.mergeCurrentCharFormat(highlight_format)
+
+                # Optionally, you can clear the selection after highlighting
+                cursor.clearSelection()
+                active_text_display.setTextCursor(cursor)
 
     def handle_deselect_span(self):
-        cursor = self.text_display.textCursor()
-        current_start = cursor.selectionStart()
-        current_end = cursor.selectionEnd()
+        for active_text_display in self.text_displays:
+            idx = self.text_displays.index(active_text_display)
+            cursor = active_text_display.textCursor()
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
 
-        # Check if a valid span is selected
-        if current_start != current_end:
-            new_spans = []
-            for span_start, span_end in self.selected_spans:
-                # Check for intersection
-                if span_start < current_end and span_end > current_start:
-                    # Remove highlighting from the intersecting portion
-                    intersection_start = max(span_start, current_start)
-                    intersection_end = min(span_end, current_end)
-                    cursor.setPosition(intersection_start, QTextCursor.MoveAnchor)
-                    cursor.setPosition(intersection_end, QTextCursor.KeepAnchor)
-                    
-                    # Explicitly set the background to transparent
-                    transparent_format = QTextCharFormat()
-                    transparent_format.setBackground(QColor(255, 255, 255, 0))  # RGBA: transparent white
-                    cursor.mergeCharFormat(transparent_format)
+            # Check if a valid span is selected
+            if start != end and idx in self.selected_spans.keys():
+                new_spans = []
+                for span_start, span_end in self.selected_spans[idx]:
+                    # Check for intersection
+                    if span_start < end and span_end > start:
+                        # Remove highlighting from the intersecting portion
+                        intersection_start = max(span_start, start)
+                        intersection_end = min(span_end, end)
+                        cursor.setPosition(intersection_start, QTextCursor.MoveAnchor)
+                        cursor.setPosition(intersection_end, QTextCursor.KeepAnchor)
+                        
+                        # Explicitly set the background to transparent
+                        transparent_format = QTextCharFormat()
+                        transparent_format.setBackground(QColor(255, 255, 255, 0))  # RGBA: transparent white
+                        cursor.mergeCharFormat(transparent_format)
 
-                    # Update the spans list
-                    if span_start < intersection_start:
-                        new_spans.append((span_start, intersection_start))
-                    if span_end > intersection_end:
-                        new_spans.append((intersection_end, span_end))
-                else:
-                    new_spans.append((span_start, span_end))
-            self.selected_spans = new_spans
+                        # Update the spans list
+                        if span_start < intersection_start:
+                            new_spans.append((span_start, intersection_start))
+                        if span_end > intersection_end:
+                            new_spans.append((intersection_end, span_end))
+                    else:
+                        new_spans.append((span_start, span_end))
+                self.selected_spans[idx] = new_spans
 
-            # Clear the current selection
-            cursor.clearSelection()
-            self.text_display.setTextCursor(cursor)
+                # Clear the current selection
+                cursor.clearSelection()
+                active_text_display.setTextCursor(cursor)
+
 
     def store_current_annotation(self, insert = False):
             # List comprehension for selected checkboxes
             # List comprehension for selected checkboxes
-        categories_selected = [checkbox.text() for checkbox in self.checkboxes if checkbox.isChecked()]
-
+        categories_selected = {checkbox.text():checkbox.isChecked() for checkbox in self.checkboxes}
+        
         # Create a dictionary for main categories with text fields
-        main_textfields = {self.textfield_to_label[textfield]: textfield.text() for textfield in self.textfields}
+        for textfield in self.textfields:
+            categories_selected[self.textfield_to_label[textfield]] = textfield.text()
+           
 
         # Assuming `self.subtextfields` contains the text fields for subcategories:
-        sub_textfields = {}
-        for subtextfield in self.subtextfields:
-            parent_category = self.subtextfield_to_label[subtextfield]  # Using the mapping instead of traversing the hierarchy
-            sub_textfields[parent_category] = sub_textfields.get(parent_category, [])
-            sub_textfields[parent_category].append(subtextfield.text())
+        for main_cat in self.main_cat_children.keys():
+            print(main_cat)
+            label_dict = {}
+            checkboxes = self.main_cat_children[main_cat]
+            for checkbox in checkboxes: 
+                if len(checkbox) ==1:
+                    label_dict[checkbox[0].text()] = checkbox[0].isChecked()
 
-        # Here you can decide how you want to structure these. 
-        # For simplicity, let's append the values directly to the categories_selected list:
-        for category, value in main_textfields.items():
-            categories_selected.append(f"{category}: {value}")
+                elif len(checkbox) == 2:
+                    if checkbox[0].isChecked():
+                        label_dict[checkbox[0].text()] = checkbox[1].text()
+                    else: 
+                        label_dict[checkbox[0].text()] = False
 
-        for category, values in sub_textfields.items():
-            for value in values:
-                categories_selected.append(f"{category}: {value}")
+            categories_selected[main_cat] = label_dict
 
         current_annotation = Annotation(
-            text=self.text_display.toPlainText(),
+            text=[text_display.toPlainText() for text_display in self.text_displays],
             mode=self.config['mode'],
             categories=categories_selected,
-            spans=self.selected_spans.copy(),  # Create a copy of the selected spans
+            spans= self.selected_spans,
             answer=None if self.config['mode'] != 'answer' else self.answer_field.toPlainText(),
             prompt=None if not self.config.get('edit_prompt', False) else self.prompt_field.toPlainText(),
             skip=False
@@ -309,38 +333,44 @@ class AnnotationApp(QMainWindow):
                 return 
             
     def reset_selection(self):
-        self.selected_spans = []
-        # Create a cursor for the QTextEdit
-        cursor = self.text_display.textCursor()
+        self.selected_spans = {}
 
-        # Select the entire text
-        cursor.select(QTextCursor.Document)
+        for text_display in self.text_displays:
+            # Create a cursor for the QTextEdit
+            cursor = text_display.textCursor()
 
-        # Create a default QTextCharFormat object
-        transparent_format = QTextCharFormat()
-        transparent_format.setBackground(QColor(255, 255, 255, 0))  # RGBA: transparent white
+            # Select the entire text
+            cursor.select(QTextCursor.Document)
 
-        # Apply the default format to the selected text
-        cursor.mergeCharFormat(transparent_format)
+            # Create a default QTextCharFormat object
+            transparent_format = QTextCharFormat()
+            transparent_format.setBackground(QColor(255, 255, 255, 0))  # RGBA: transparent white
 
-        # Set the cursor back to the QTextEdit
-        self.text_display.setTextCursor(cursor)
-        # Clear the selection
-        
-        cursor.clearSelection()
-        self.text_display.setTextCursor(cursor)
+            # Apply the default format to the selected text
+            cursor.mergeCharFormat(transparent_format)
+
+            # Set the cursor back to the QTextEdit
+            text_display.setTextCursor(cursor)
+            # Clear the selection
+            
+            cursor.clearSelection()
+            text_display.setTextCursor(cursor)
 
          # Reset checkboxes
         for checkbox in self.checkboxes:
             checkbox.setChecked(False)
+        # Clear subcategory checkboxes
+        for main_cat in self.main_cat_children.keys():
+            for checkbox in self.main_cat_children[main_cat]:
+                checkbox[0].setChecked(False)
+                # Clear subcategory text fields
+                if len(checkbox) == 2:
+                    checkbox[1].clear()
 
         # Clear main category text fields
         for textfield in self.textfields:
             textfield.clear()
 
-        # Clear subcategory text fields
-        for subtextfield in self.subtextfields:
-            subtextfield.clear()
 
         # Reset prompt field
         self.prompt_field.setText(self.config['default_prompt'])
@@ -368,7 +398,8 @@ class AnnotationApp(QMainWindow):
 
         else:
             self.reset_selection()
-            self.text_display.setText(self.annotations[self.current_idx].text)
+            for i, text_column in enumerate(self.config['text_columns']):
+                self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
 
 
 
@@ -379,10 +410,10 @@ class AnnotationApp(QMainWindow):
 
     def handle_skip(self):
         current_annotation = Annotation(
-            text=self.text_display.toPlainText(),
+            text=[text_display.toPlainText() for text_display in self.text_displays],
             mode=self.config['mode'],
             categories=[],
-            spans=[],
+            spans={},
             answer=None,
             prompt=None,
             skip=True
@@ -402,6 +433,8 @@ class AnnotationApp(QMainWindow):
             # Check file extension to determine how to read the file
             if file_name.endswith('.ano'):
                 self.annotations = pickle.load(open(file_name, "rb"))
+                self.current_idx = 0
+                self.update_display()
             else: 
                 self.annotations = []
                 if file_name.endswith('.csv'):
@@ -410,22 +443,14 @@ class AnnotationApp(QMainWindow):
                     self.dataframe = pd.read_pickle(file_name)
 
                 self.current_idx = 0
- 
-                self.column_dropdown.clear()
-                # Populate the dropdown with column names
-                self.column_dropdown.addItems(self.dataframe.columns)
-                self.column_dropdown.show()
 
                 print("Dropdown items:", self.column_dropdown.count())
                 for i in range(self.column_dropdown.count()):
                     print(self.column_dropdown.itemText(i))
-            
-    
-    def handle_column_selection(self):
-        if not self.annotations:
-            selected_column = self.column_dropdown.currentText()
-            self.annotations = [Annotation(text=row, mode=None, categories=[], spans=[], answer=None, prompt=None, skip=False) for row in self.dataframe[selected_column].tolist()]
-        self.text_display.setText(self.annotations[self.current_idx].text)
+                texts = [[row[col] for col in self.config['text_columns']] for _, row in self.dataframe.iterrows()]
+                self.annotations = [Annotation(text=text_list, mode=None, categories=[], spans={}, answer=None, prompt=None, skip=False) for text_list in texts]
+                for i, text_column in enumerate(self.config['text_columns']):
+                    self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
     
     def handle_backward(self):
 
@@ -454,63 +479,58 @@ class AnnotationApp(QMainWindow):
             checkbox.setChecked(False)
     def update_display(self):
         # Update text display
-        self.text_display.setText(self.annotations[self.current_idx].text)
+        for i, text_column in enumerate(self.config['text_columns']):
+            self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
 
         # Reset selection and checkboxes
         self.reset_selection()
-        for checkbox in self.checkboxes:
-            checkbox.setChecked(False)
 
-        # Clear textfields
-        for textfield in self.textfields:
-            textfield.clear()
-        for subtextfield in self.subtextfields:
-            subtextfield.clear()
 
         # Update checkboxes and text fields
-        for category in self.annotations[self.current_idx].categories:
-            if ':' in category:
-                cat_name, cat_value = category.split(': ', 1)  # Split by the first occurrence of ': '
-
-                # Check the checkbox for this main category
+        for category_name in self.annotations[self.current_idx].categories.keys():
+            category_value = self.annotations[self.current_idx].categories[category_name]
+            if isinstance(category_value,bool) and category_value == True:
                 for checkbox in self.checkboxes:
-                    if checkbox.text() == cat_name:
+                    if checkbox.text() == category_name:
                         checkbox.setChecked(True)
-                        break
 
-                # Set the value in the text field for this main category or subcategory
-                found = False
+            elif isinstance(category_value,str):
                 for textfield in self.textfields:
-                    if self.textfield_to_label[textfield] == cat_name:
-                        textfield.setText(cat_value)
-                        found = True
-                        break
-                if not found:
-                    for subtextfield in self.subtextfields:
-                        if self.subtextfield_to_label[subtextfield] == cat_name:
-                            subtextfield.setText(cat_value)
-                            break
-            else:
-                # Just check the checkbox for this category
-                for checkbox in self.checkboxes:
-                    if checkbox.text() == category:
-                        checkbox.setChecked(True)
-                        break
+                    if self.textfield_to_label[textfield] == category_name:
+                        textfield.setText(category_value)
+
+            elif isinstance(category_value,dict):
+                checkboxes = self.main_cat_children[category_name]
+                for checkbox in checkboxes: 
+                    if checkbox[0].text() in category_value.keys():
+                        if  category_value[checkbox[0].text()] != False:
+                            checkbox[0].setChecked(True)
+
+                            if len(checkbox) == 2:
+                                checkbox[1].setText(category_value[checkbox[0].text()])
+
 
         # Update prompt display
         self.prompt_field.setText(self.annotations[self.current_idx].prompt)
 
         # Update spans
-        cursor = self.text_display.textCursor()
-        highlight_format = QTextCharFormat()
-        highlight_format.setBackground(QColor('yellow'))
-        for start, end in self.annotations[self.current_idx].spans:
-            cursor.setPosition(start, QTextCursor.MoveAnchor)
-            cursor.setPosition(end, QTextCursor.KeepAnchor)
-            cursor.mergeCharFormat(highlight_format)
+        print('spans')
+        print(self.annotations[self.current_idx].spans)
+        for text_display in self.text_displays:
+            idx = self.text_displays.index(text_display)
+            if idx in self.annotations[self.current_idx].spans.keys():
+                cursor = text_display.textCursor()
+                highlight_format = QTextCharFormat()
+                highlight_format.setBackground(QColor('yellow'))
+                for start, end in self.annotations[self.current_idx].spans[idx]:
+                    cursor.setPosition(start, QTextCursor.MoveAnchor)
+                    cursor.setPosition(end, QTextCursor.KeepAnchor)
+                    cursor.mergeCharFormat(highlight_format)
 
         
     def save_annotations(self):
+        if not self.selected_spans:
+            self.selected_spans = self.annotations[self.current_idx].spans
         self.store_current_annotation()
         options = QFileDialog.Options()
         file_name, _ = QFileDialog.getSaveFileName(self, "Save Annotations", "", "Annotations Files (*.ano);;All Files (*)", options=options)
