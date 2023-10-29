@@ -82,14 +82,24 @@ class AnnotationApp(QMainWindow):
             self.text_displays.append(text_edit)
             annotation_layout.addWidget(text_edit)
       
-
+        # Textfield for the prompt
         if self.config.get('edit_prompt', False):
+            label = QLabel('Prompt', self)  # Adding a label for clarity
+            annotation_layout.addWidget(label)
             self.prompt_field = QTextEdit(self)
             annotation_layout.addWidget(self.prompt_field)
-            self.prompt_field.setText(self.config['default_prompt'])
+            self.prompt_field.setText(self.config.get('default_prompt', ''))
 
-        # Depending on the mode, show relevant widgets
-        # Depending on the mode, show relevant widgets
+
+        # Textfield for the answer
+        if self.config.get('answers', False):
+            label = QLabel('Answer', self)  # Adding a label for clarity
+            annotation_layout.addWidget(label)
+            self.answer_field = QTextEdit(self)
+            annotation_layout.addWidget(self.answer_field)
+            self.answer_field.setText(self.config.get('default_answer', ''))
+
+
         if self.config['categories']:
             # Create a grid layout for categories and subcategories
             categories_grid_layout = QGridLayout()
@@ -174,9 +184,7 @@ class AnnotationApp(QMainWindow):
 
                 self.selected_spans = {}
 
-        if self.config['answers']:
-            self.answer_field = QTextEdit(self)
-            annotation_layout.addWidget(self.answer_field)
+      
             
         
         # Common buttons
@@ -214,12 +222,7 @@ class AnnotationApp(QMainWindow):
         label.setFont(bold_font)
 
     def handle_span_selection(self):
-        # Identify which QTextEdit the cursor event came from
-        #active_text_display = self.focusWidget()  # This should return the QTextEdit that has the focus
-        #if not isinstance(active_text_display, QTextEdit):
-           # return
 
-        #idx = self.text_displays.index(active_text_display)
         for active_text_display in self.text_displays:
             idx = self.text_displays.index(active_text_display)
 
@@ -284,8 +287,7 @@ class AnnotationApp(QMainWindow):
 
 
     def store_current_annotation(self, insert = False):
-            # List comprehension for selected checkboxes
-            # List comprehension for selected checkboxes
+
         categories_selected = {checkbox.text():checkbox.isChecked() for checkbox in self.checkboxes}
         
         # Create a dictionary for main categories with text fields
@@ -309,14 +311,27 @@ class AnnotationApp(QMainWindow):
                         label_dict[checkbox[0].text()] = False
 
             categories_selected[main_cat] = label_dict
+        
+        if self.config.get('edit_prompt', False):
+            prompt = self.prompt_field.toPlainText()
+        elif self.config.get('default_prompt', False):
+            prompt = self.config['default_prompt']
+        else: 
+            prompt = None
 
+        if self.config.get('answers', False):
+            answer = self.answer_field.toPlainText()
+        elif self.config.get('default_answer', False):  # there is no use for this edge case, but maybe someone might need it.
+            answer = self.config['default_answer']
+        else: 
+            answer = None
         current_annotation = Annotation(
             text=[text_display.toPlainText() for text_display in self.text_displays],
             mode=self.config['mode'],
             categories=categories_selected,
             spans= self.selected_spans,
-            answer=None if self.config['mode'] != 'answer' else self.answer_field.toPlainText(),
-            prompt=None if not self.config.get('edit_prompt', False) else self.prompt_field.toPlainText(),
+            answer=answer,
+            prompt=prompt,
             skip=False
         )
         if not insert:
@@ -373,7 +388,10 @@ class AnnotationApp(QMainWindow):
 
 
         # Reset prompt field
-        self.prompt_field.setText(self.config['default_prompt'])
+        if self.config.get('edit_prompt', False):
+            self.prompt_field.setText(self.config.get('default_prompt', ''))
+        if self.config.get('answers', False):
+            self.answer_field.setText(self.config.get('default_answer', ''))
 
     def handle_next(self):
         # Store the current annotation
@@ -471,12 +489,6 @@ class AnnotationApp(QMainWindow):
         
             self.update_display()
 
-    def ensure_checkbox_state(self, state):
-        checkbox = self.sender()  # Get the checkbox that emitted the signal
-        if state == Qt.Checked and not checkbox.isChecked():
-            checkbox.setChecked(True)
-        elif state == Qt.Unchecked and checkbox.isChecked():
-            checkbox.setChecked(False)
     def update_display(self):
         # Update text display
         for i, text_column in enumerate(self.config['text_columns']):
@@ -511,11 +523,12 @@ class AnnotationApp(QMainWindow):
 
 
         # Update prompt display
-        self.prompt_field.setText(self.annotations[self.current_idx].prompt)
-
+        if self.config.get('answers', False):
+            self.prompt_field.setText(self.annotations[self.current_idx].prompt)
+        if self.config.get('answers', False): 
+            self.answer_field.setText(self.annotations[self.current_idx].answer)
         # Update spans
-        print('spans')
-        print(self.annotations[self.current_idx].spans)
+    
         for text_display in self.text_displays:
             idx = self.text_displays.index(text_display)
             if idx in self.annotations[self.current_idx].spans.keys():
