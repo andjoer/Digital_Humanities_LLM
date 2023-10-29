@@ -16,6 +16,9 @@ from peft import AutoPeftModelForCausalLM
 import argparse
 from os import environ
 
+from utils import formatting_func_standard, formatting_func_chat
+
+
 class Evaluate():
     """
     This class provides methods for evaluating large language models on different datasets.
@@ -40,23 +43,36 @@ class Evaluate():
 
     def __init__(self,
                  model: str = "",
-                 samples_per_ds: int = 60,
+                 samples_per_ds: int = 2,
                  lora: bool = True):
         
         self.samples_per_ds: int = samples_per_ds
  
         
         self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(model)
+        
 
         self.pipeline: pipeline = transformers.pipeline(
             "text-generation",
             model=model,
             torch_dtype=torch.float16,
             device_map= {"":0},
+            trust_remote_code=True,
+            tokenizer=self.tokenizer
         )
 
-        self.eval_dict: Dict[str, List[Union[str, float]]] = {'name':[],'instruction':[],'response':[],'prediction':[],'score':[]}
+        if "llama" in model.lower() and "chat" in model.lower():
+            self.separator = '[/INST]'
+            self.user_separator = '<</SYS>>'
+            self.formatting_function = formatting_func_chat
+            
+            print('using chat model')
+        else:
+            self.separator = '### assistant:'
+            self.user_separator = '### human:'
+            self.formatting_function = formatting_func_standard
 
+        self.eval_dict: Dict[str, List[Union[str, float]]] = {'name':[],'instruction':[],'response':[],'prediction':[],'score':[]}
 
     def load_ds_from_folder(self, folder: str) -> Dict[str, Any]:
         files = glob.glob(folder+"/*")
@@ -64,7 +80,7 @@ class Evaluate():
         for file in files: 
             name = file.split('/')[-1].split('.')[0]
             with open(file, 'rb') as handle:
-                ds[name] = pickle.load(handle)
+                ds[name] = pickle.load(handle).map(self.formatting_function, batched=True)
 
         return ds
 
@@ -74,9 +90,9 @@ class Evaluate():
 
         for sample in tqdm(ds[:self.samples_per_ds]):
 
-            inst_resp = sample.split('### assistant:')
+            inst_resp = sample.split(self.separator)
 
-            prompt = inst_resp[0] + '### assistant:'
+            prompt = inst_resp[0] + self.separator
  
             prediction = self.pipeline(
             prompt,
@@ -85,11 +101,11 @@ class Evaluate():
             top_p=0.9,
             num_return_sequences=1,
             eos_token_id=self.tokenizer.eos_token_id,
-            max_new_tokens = 400,
+            max_new_tokens = 500,
             return_full_text=False
             )[0]['generated_text']
 
-            self.eval_dict['instruction'].append(prompt.split('### human:')[1])
+            self.eval_dict['instruction'].append(prompt.split(self.user_separator)[1])
             self.eval_dict['response'].append(inst_resp[1])
             self.eval_dict['prediction'].append(prediction)
             self.eval_dict['name'].append(name)
@@ -540,7 +556,7 @@ if __name__ == "__main__":
     "--models",  
     nargs="*", 
     type=str,
-    default=['./results/OnlyBspSimple7b64/checkpoint-300-merged'],  # default if nothing is provided
+    default=['./results/LlamaChatOnlyBspSimp7b64/checkpoint-300-merged'],  # default if nothing is provided
     )
 
     CLI.add_argument(

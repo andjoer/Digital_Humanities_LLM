@@ -1,27 +1,16 @@
+# coding=utf-8
 #######################################################################
 #Modified according to the experiment requirements
 #Added Weights and Biases logging
 #Import for different local datasets
 #Append EOS token to all samples in datasets
-#Original License below:
+#Borrows from The HuggingFace Inc. team. All rights reserved.
 #######################################################################
-# coding=utf-8
-# Copyright 2023 The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
 import os
 from dataclasses import dataclass, field, asdict
-from typing import Optional
+from typing import Optional, Any
 import pickle
 import pandas as pd
 import torch
@@ -42,6 +31,9 @@ from sft_trainer.sft_trainer_mod import SFTTrainer, DataCollatorForCompletionOnl
 import ast
 from os import environ            # to interact with weights and biases
 import einops
+from functools import partial
+
+from utils import formatting_func_standard, formatting_func_chat
 
 # This example fine-tunes Llama v2 model on Guanace dataset
 # using QLoRA. At the end of the script we perform merging the weights
@@ -142,18 +134,25 @@ class ScriptArguments:
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
         },
     )
-    save_steps: int = field(default=200, metadata={"help": "Save checkpoint every X updates steps."})
+    save_steps: int = field(default=100, metadata={"help": "Save checkpoint every X updates steps."})    ### save_steps
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     merge_and_push: Optional[bool] = field(
         default=True,
         metadata={"help": "Merge and push weights after training"},
     )
     output_dir: str = field(                                                 ##################################### model_dir
-        default="./results/noGunacoChat7b64",
+        default="./results/LlamaChatOnlyBspSimp7b64",
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
     )
+
+    checkpoint: str = field(                                                 ##################################### checkpoint
+        default="",
+        metadata={"help": "The directory of a checkpoint to load."},
+    )
+
+
     train_eval_dir: str = field(
-        default="./data/train_test_datasets/run_5_noGuanaco",                 ######################################### location of the train and eval dataset
+        default="./data/train_test_datasets/run_6_onlybsp_simple",                 ######################################### location of the train and eval dataset
         metadata={"help": "The directory of the train and eval datasets."},
     )
 
@@ -176,275 +175,295 @@ class ScriptArguments:
         metadata={"help": "Steps between the evaluations"},
     )
 
-parser = HfArgumentParser(ScriptArguments)
-script_args = parser.parse_args_into_dataclasses()[0]
+class ConfigManager:
 
-if  environ.get('LORA_ALPHA') is not None:    
-    script_args.lora_alpha = int(environ.get('LORA_ALPHA'))
-    print('updated lora alpha from ENV: '+str(script_args.lora_alpha))
-
-if  environ.get('LORA_R') is not None:    
-    script_args.lora_r = int(environ.get('LORA_R'))
-    print('updated lora alpha from ENV: '+str(script_args.lora_r))
-
-if  environ.get('BITQ') is not None:    
-    script_args.use_4bit = ast.literal_eval(environ.get('BITQ'))
-    print('updated use 4 bit from ENV: '+str(script_args.use_4bit))
-
-if  environ.get('TRAIN_EVAL_DIR') is not None:    
-    script_args.train_eval_dir = environ.get('TRAIN_EVAL_DIR')
-    print('updated train eval Dir from ENV: '+script_args.train_eval_dir)
-
-if  environ.get('OUPUT_DIR') is not None:    
-    script_args.output_dir = environ.get('OUPUT_DIR')
-    print('updated output dir from ENV: '+script_args.output_dir)
-
-if  environ.get('BASE_MODEL') is not None:    
-    script_args.model_name = environ.get('BASE_MODEL')
-    print('updated base model from ENV: '+script_args.model_name)
-
-if  environ.get('BITH') is not None:    
-    script_args.use_8bit = ast.literal_eval(environ.get('BITH'))
-    print('updated use_8bit from ENV: '+str(script_args.use_8bit))
-
-if  environ.get('USE_LORA') is not None:    
-    script_args.use_lora = ast.literal_eval(environ.get('USE_LORA'))
-    print('updated use_lora from ENV: '+str(script_args.use_lora))
-
-if  environ.get('EVAL_COLLATOR') is not None:    
-    script_args.eval_collator = environ.get('EVAL_COLLATOR')
-    print('updated base model from ENV: '+script_args.eval_collator)
-
-if  environ.get('TRAIN_COLLATOR') is not None:    
-    script_args.train_collator = environ.get('TRAIN_COLLATOR')
-    print('updated base model from ENV: '+script_args.train_collator)
-
-if  environ.get('EVAL_STEPS') is not None:    
-    script_args.eval_steps = int(environ.get('EVAL_STEPS'))
-    print('updated base model from ENV: '+ str(script_args.eval_steps))
-
-
-if  environ.get('SAVE_STEPS') is not None:    
-    script_args.save_steps = int(environ.get('SAVE_STEPS'))
-    print('updated base model from ENV: '+ str(script_args.save_steps))
-
-
-output_dir_exist = os.path.exists(script_args.output_dir)
-if not output_dir_exist:
-
-   os.makedirs(script_args.output_dir)
-
-def create_and_prepare_model(args):
-    compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
-
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=args.use_4bit,
-        load_in_8bit=args.use_8bit,
-        bnb_4bit_quant_type=args.bnb_4bit_quant_type,
-        bnb_4bit_compute_dtype=compute_dtype,
-        bnb_4bit_use_double_quant=args.use_nested_quant,
-    )
-
-    if compute_dtype == torch.float16 and args.use_4bit:
-        major, _ = torch.cuda.get_device_capability()
-        if major >= 8:
-            print("=" * 80)
-            print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
-            print("=" * 80)
-
-    # Load the entire model on the GPU 0
-    # switch to `device_map = "auto"` for multi-GPU
-    device_map = 'auto'
-
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model_name, 
-        quantization_config=bnb_config, 
-        device_map=device_map, 
-        use_auth_token=True,
-        trust_remote_code=True
-    )
+    def __init__(self, arg_class: Any) -> None:
+        self.parser = HfArgumentParser(arg_class)
+        self.config = self.parser.parse_args_into_dataclasses()[0]
+        self.env_mappings = {
+            'LORA_ALPHA': 'lora_alpha',
+            'LORA_R': 'lora_r',
+            'BITQ': 'use_4bit',
+            'TRAIN_EVAL_DIR': 'train_eval_dir',
+            'OUPUT_DIR': 'output_dir',
+            'BASE_MODEL': 'model_name',
+            'BITH': 'use_8bit',
+            'USE_LORA': 'use_lora',
+            'EVAL_COLLATOR': 'eval_collator',
+            'TRAIN_COLLATOR': 'train_collator',
+            'EVAL_STEPS': 'eval_steps',
+            'SAVE_STEPS': 'save_steps',
+            'CHECKPOINT': 'checkpoint'
+        }
     
-    # check: https://github.com/huggingface/transformers/pull/24906
-    model.config.pretraining_tp = 1 
+    def update_from_env(self) -> None:
+        for env_key, attr_name in self.env_mappings.items():
+            env_value = environ.get(env_key)
+            if env_value is not None:
+                # Convert booleans and integers from environment variables
+                if isinstance(getattr(self.config, attr_name), bool):
+                    env_value = ast.literal_eval(env_value)
+                elif isinstance(getattr(self.config, attr_name), int):
+                    env_value = int(env_value)
+                setattr(self.config, attr_name, env_value)
+                print(f"updated {attr_name} from ENV: {getattr(self.config, attr_name)}")
 
-    if script_args.use_lora:
-        if 'falcon' in script_args.model_name:
-            peft_config = LoraConfig(
-            lora_alpha=script_args.lora_alpha,
-            lora_dropout=script_args.lora_dropout,
-            r=script_args.lora_r,
-            target_modules=["query_key_value"],
-            bias="none",
-            task_type="CAUSAL_LM", 
-        )     
-        else:  
-            peft_config = LoraConfig(
-                lora_alpha=script_args.lora_alpha,
-                lora_dropout=script_args.lora_dropout,
-                r=script_args.lora_r,
-                bias="none",
-                task_type="CAUSAL_LM", 
-            )
-    else: 
-        peft_config = None
+class DatasetManager:
 
-    tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, trust_remote_code=True)
-    tokenizer.pad_token = tokenizer.eos_token
+    def __init__(self, script_args, tokenizer):
+        self.script_args = script_args
+        self.tokenizer = tokenizer
+        self.protocol = []
+        
+        if "chat" in script_args.model_name:
+            self.formatting_func = partial(formatting_func_chat)
+        else:
+            self.formatting_func = partial(formatting_func_standard, eos_token=self.tokenizer.eos_token)
 
-    return model, peft_config, tokenizer
-
-
-if  environ.get('WANDB_API_KEY') is not None:    
-
-    import wandb
-
-    os.environ['WANDB_PROJECT'] = script_args.wnb_project
-    report_to = 'wandb'
-
-else: 
-    report_to = None
-    print('WARNING: no weights and biases logging')
-   
-#with wandb.init(config=config):
-training_arguments = TrainingArguments(
-    output_dir=script_args.output_dir,
-    per_device_train_batch_size=script_args.per_device_train_batch_size,
-    per_device_eval_batch_size=script_args.per_device_eval_batch_size,
-    gradient_accumulation_steps=script_args.gradient_accumulation_steps,
-    eval_accumulation_steps = script_args.gradient_accumulation_steps,
-    optim=script_args.optim,
-    save_steps=script_args.save_steps,
-    logging_steps=script_args.logging_steps,
-    learning_rate=script_args.learning_rate,
-    fp16=script_args.fp16,
-    bf16=script_args.bf16,
-    max_grad_norm=script_args.max_grad_norm,
-    #max_steps=script_args.max_steps,
-    num_train_epochs = script_args.num_train_epochs,
-    warmup_ratio=script_args.warmup_ratio,
-    group_by_length=script_args.group_by_length,
-    lr_scheduler_type=script_args.lr_scheduler_type,
-    evaluation_strategy = 'steps',
-    eval_steps = script_args.eval_steps,
-    report_to = report_to
-)
-
-model, peft_config, tokenizer = create_and_prepare_model(script_args)
-model.config.use_cache = False
-#############################################################################################
-# collator
-response_template = '### assistant:'
-
-if script_args.eval_collator == 'all':
-    eval_data_collator = None
-
-elif script_args.eval_collator == 'completion':
-    eval_data_collator = DataCollatorForCompletionOnlyLM(response_template,tokenizer)
-else:
-    eval_data_collator = None
-
-if script_args.train_collator == 'all':
-    train_data_collator = None
-
-elif script_args.train_collator == 'completion':
-    train_data_collator = DataCollatorForCompletionOnlyLM(response_template,tokenizer)
-else:
-    train_data_collator = None
-#############################################################################################
-# write all parameters into a protocol to double check
-protocol = [{k: v} for k, v in asdict(script_args).items()]
-
-
-def load_ds_from_folder(folder,tokenizer,shorten = {},concat = True):
-
+    @staticmethod
     def append_eos(ds):
-
-        ds['text'] = ds['text']+tokenizer.eos_token
-
+        # If you want to modify the 'text' column, do it here.
         return ds
 
-    files = glob.glob(folder+"/*")
-    ds = {}
-    for file in files: 
-        name = file.split('/')[-1].split('.')[0]
-        test_eval = file.split('/')[-2]
+    def load_ds_from_folder(self, folder, shorten=None, concat=True):
+        if shorten is None:
+            shorten = {}
 
-        with open(file, 'rb') as handle:
-            loaded_ds = pickle.load(handle).map(append_eos)
+        files = glob.glob(folder + "/*")
+        ds = {}
+        
+        for file in files:
+            name = file.split('/')[-1].split('.')[0]
+            test_eval = file.split('/')[-2]
+            
+            with open(file, 'rb') as handle:
+                loaded_ds = pickle.load(handle).map(self.append_eos)
 
             if name in shorten.keys():
-                loaded_ds = Dataset.from_pandas(pd.DataFrame(data = list(loaded_ds)[:shorten[name][test_eval]]))           # shorten a specific dataset 
-            print('Dataset: '+test_eval+' '+name)
+                loaded_ds = Dataset.from_pandas(pd.DataFrame(data=list(loaded_ds)[:shorten[name][test_eval]]))
+
+            loaded_ds = loaded_ds.map(self.formatting_func, batched=True)
+
+            print('Dataset:', test_eval, name)
             print(loaded_ds)
-            protocol.append({'Dataset: '+test_eval+' '+name : str(loaded_ds)})
+            self.protocol.append({'Dataset: ' + test_eval + ' ' + name: str(loaded_ds)})
 
             ds[name] = loaded_ds
+
+        if concat:
+            return concatenate_datasets(ds.values()).shuffle()
+        else:
+            return ds
+
+    def load_datasets(self, shorten_dict=None):
+        if shorten_dict is None:
+            shorten_dict = {}
+
+        train_folder = self.script_args.train_eval_dir + '/train'
+        eval_folder = self.script_args.train_eval_dir + '/eval'
+
+        train_ds = self.load_ds_from_folder(train_folder, shorten=shorten_dict)
+        test_ds = self.load_ds_from_folder(eval_folder, shorten=shorten_dict, concat=False)
         
-    if concat:
-        return concatenate_datasets(ds.values()).shuffle()
-    else: 
-        return ds
+        return train_ds, test_ds
 
-train_folder = script_args.train_eval_dir + '/train'
-eval_folder = script_args.train_eval_dir + '/eval'
+class ModelManager:
+    
+    def __init__(self, script_args,train_ds,test_ds):
+        self.script_args = script_args
+        self.protocol = [{k: v} for k, v in asdict(script_args).items()]
+        self.ensure_output_dir()
+        self.model, self.peft_config, self.tokenizer = self.create_and_prepare_model()
+        
+        # Write protocol
+        with open(self.script_args.output_dir + "/protocol.txt", "w") as file:
+            for dictionary in self.protocol:
+                for key, value in dictionary.items():
+                    file.write(f"{key}: {value}\n")
+        
+        # Set properties
+        self.tokenizer.padding_side = "right"
+        self.configure_collators()
+        self.training_arguments = self.configure_training_arguments()
+        self.trainer = self.initialize_trainer(train_ds, test_ds)  # Assuming train_ds and test_ds are globally available
+    
+    def ensure_output_dir(self):
+        output_dir_exist = os.path.exists(self.script_args.output_dir)
+        if not output_dir_exist:
+            os.makedirs(self.script_args.output_dir)
+    
+    def create_and_prepare_model(self):
+        compute_dtype = getattr(torch, self.script_args.bnb_4bit_compute_dtype)
 
-def formatting_func(string):
-    return re.sub('### Assistant','### assistant',string)
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=self.script_args.use_4bit,
+            load_in_8bit=self.script_args.use_8bit,
+            bnb_4bit_quant_type=self.script_args.bnb_4bit_quant_type,
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_use_double_quant=self.script_args.use_nested_quant,
+        )
+
+        if compute_dtype == torch.float16 and self.script_args.use_4bit:
+            major, _ = torch.cuda.get_device_capability()
+            if major >= 8:
+                print("=" * 80)
+                print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
+                print("=" * 80)
+
+        # Load the entire model on the GPU 0
+        # switch to `device_map = "auto"` for multi-GPU
+        device_map = 'auto'
+
+        model = AutoModelForCausalLM.from_pretrained(
+            self.script_args.model_name, 
+            quantization_config=bnb_config, 
+            device_map=device_map, 
+            use_auth_token=True,
+            trust_remote_code=True
+        )
+        
+        # check: https://github.com/huggingface/transformers/pull/24906
+        model.config.pretraining_tp = 1 
+
+        if self.script_args.use_lora:
+            if 'falcon' in self.script_args.model_name:
+                peft_config = LoraConfig(
+                lora_alpha=self.script_args.lora_alpha,
+                lora_dropout=self.script_args.lora_dropout,
+                r=self.script_args.lora_r,
+                target_modules=["query_key_value"],
+                bias="none",
+                task_type="CAUSAL_LM", 
+            )     
+            else:  
+                peft_config = LoraConfig(
+                    lora_alpha=self.script_args.lora_alpha,
+                    lora_dropout=self.script_args.lora_dropout,
+                    r=self.script_args.lora_r,
+                    bias="none",
+                    task_type="CAUSAL_LM", 
+                )
+        else: 
+            peft_config = None
+
+        tokenizer = AutoTokenizer.from_pretrained(self.script_args.model_name, trust_remote_code=True)
+        tokenizer.pad_token = tokenizer.eos_token
+
+        return model, peft_config, tokenizer
+       
+    
+    def configure_training_arguments(self):
+        report_to = None
+        if environ.get('WANDB_API_KEY') is not None:
+            import wandb
+            os.environ['WANDB_PROJECT'] = self.script_args.wnb_project
+            report_to = 'wandb'
+        else:
+            print('WARNING: no weights and biases logging')
+
+        training_arguments = TrainingArguments(
+            output_dir=self.script_args.output_dir,
+            per_device_train_batch_size=self.script_args.per_device_train_batch_size,
+            per_device_eval_batch_size=self.script_args.per_device_eval_batch_size,
+            gradient_accumulation_steps=self.script_args.gradient_accumulation_steps,
+            eval_accumulation_steps = self.script_args.gradient_accumulation_steps,
+            optim=self.script_args.optim,
+            save_steps=self.script_args.save_steps,
+            logging_steps=self.script_args.logging_steps,
+            learning_rate=self.script_args.learning_rate,
+            fp16=self.script_args.fp16,
+            bf16=self.script_args.bf16,
+            max_grad_norm=self.script_args.max_grad_norm,
+            #max_steps=script_args.max_steps,
+            num_train_epochs = self.script_args.num_train_epochs,
+            warmup_ratio=self.script_args.warmup_ratio,
+            group_by_length=self.script_args.group_by_length,
+            lr_scheduler_type=self.script_args.lr_scheduler_type,
+            evaluation_strategy = 'steps',
+            eval_steps = self.script_args.eval_steps,
+            report_to = report_to
+        )
+        return training_arguments
+    
+    def configure_collators(self):
+        if "chat" in self.script_args.model_name.lower() and "llama" in self.script_args.model_name.lower():
+            response_template = '[/INST]'
+        else:
+            response_template = '### assistant:'
+
+        if self.script_args.eval_collator == 'all':
+            self.eval_data_collator = None
+
+        elif self.script_args.eval_collator == 'completion':
+            self.eval_data_collator = DataCollatorForCompletionOnlyLM(response_template,self.tokenizer)
+        else:
+            self.eval_data_collator = None
+
+        if self.script_args.train_collator == 'all':
+            self.train_data_collator = None
+
+        elif self.script_args.train_collator == 'completion':
+            self.train_data_collator = DataCollatorForCompletionOnlyLM(response_template,tokenizer)
+        else:
+            self.train_data_collator = None
+        
+    
+    def initialize_trainer(self, train_ds, test_ds):
+        trainer = SFTTrainer(
+            model=self.model,
+            train_dataset=train_ds,
+            eval_dataset=test_ds,
+            train_data_collator = self.train_data_collator,
+            eval_data_collator=self.eval_data_collator,
+            peft_config=self.peft_config,
+            dataset_text_field="text",
+            max_seq_length=self.script_args.max_seq_length,
+            tokenizer=self.tokenizer,
+            args=self.training_arguments,
+            packing=self.script_args.packing,
+        )
+        return trainer
+
+    def train_model(self):
+        if self.script_args.checkpoint:
+            self.trainer.train(self.script_args.checkpoint)
+        else:
+            self.trainer.train()
+        
+        if self.script_args.merge_and_push:
+                output_dir = os.path.join(self.script_args.output_dir, "final_checkpoints")
+                self.trainer.model.save_pretrained(output_dir)
+                self.tokenizer.save_pretrained(output_dir)
+                # Free memory for merging weights
+                del self.model
+                torch.cuda.empty_cache()
+
+                from peft import AutoPeftModelForCausalLM
+
+                model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="auto", torch_dtype=torch.bfloat16)
+                model = model.merge_and_unload()
+
+                output_merged_dir = os.path.join(self.script_args.output_dir, "final_merged_checkpoint")
+                model.save_pretrained(output_merged_dir, safe_serialization=True)
+                self.tokenizer.save_pretrained(output_merged_dir)
 
 
-shorten_dict = {'CheungGuanaco':{'train':40000,'eval':200}}
-train_ds = load_ds_from_folder(train_folder,tokenizer,shorten=shorten_dict)
-test_ds = load_ds_from_folder(eval_folder,tokenizer,shorten=shorten_dict,concat=False)
+def load_and_train(script_args):
+    # Load Dataset
+    tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, trust_remote_code=True)
+    dataset_manager = DatasetManager(script_args, tokenizer)
+    train_ds, test_ds = dataset_manager.load_datasets()
 
-print('Model and checkpoints will be saved at: ' +script_args.output_dir)
-print('#### lora config ####')
-print(peft_config)
-print('####')
-print(LoraConfig)
+    # Initialize and train Model
+    model_manager = ModelManager(script_args, train_ds, test_ds)
+    model_manager.train_model()
 
-with open(script_args.output_dir+"/protocol.txt", "w") as file:
-    for dictionary in protocol:
-        for key, value in dictionary.items():
-            file.write(f"{key}: {value}\n")
-   
-# Fix weird overflow issue with fp16 training
-tokenizer.padding_side = "right"
+    print("Training Completed!")
 
-trainer = SFTTrainer(
-    model=model,
-    train_dataset=train_ds,
-    eval_dataset=test_ds,
-    train_data_collator = train_data_collator,
-    eval_data_collator=eval_data_collator,
-    peft_config=peft_config,
-    dataset_text_field="text",
-    max_seq_length=script_args.max_seq_length,
-    tokenizer=tokenizer,
-    args=training_arguments,
-    packing=script_args.packing,
-    formatting_func=formatting_func
-)
-
-trainer.train()
-
-if script_args.merge_and_push:
-    output_dir = os.path.join(script_args.output_dir, "final_checkpoints")
-    trainer.model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
-    # Free memory for merging weights
-    del model
-    torch.cuda.empty_cache()
-
-    from peft import AutoPeftModelForCausalLM
-
-    model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="auto", torch_dtype=torch.bfloat16)
-    model = model.merge_and_unload()
-
-    output_merged_dir = os.path.join(script_args.output_dir, "final_merged_checkpoint")
-    model.save_pretrained(output_merged_dir, safe_serialization=True)
-    tokenizer.save_pretrained(output_merged_dir)
-
-
-
- 
+if __name__ == "__main__":
+     # Initialize Config Manager
+    config_manager = ConfigManager(ScriptArguments)
+    config_manager.update_from_env()
+    script_args = config_manager.config
+    load_and_train(script_args)
 

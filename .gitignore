@@ -6,3 +6,6 @@ CheungGuanaco.pkl
 runpodctl
 PhilArchive.jsonl
 tune_eval.sh
+semantic_scholar/
+data/train_test_datasets/run_1_Cheung/
+results/
