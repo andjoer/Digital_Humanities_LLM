@@ -1,0 +1,23 @@
+mode: "answer"  
+annotate_spans: true
+
+categories:
+  - name: "Category1"
+    subcategories:
+      - name: "Subcategory1.1"
+      - name: "Subcategory1.2"
+      
+  - name: "Category2"
+  - name: "Narrator"
+    type: "checkbox" # this can be checkbox or text. Checkbox will render as checkbox, text will render as a text field.
+    subcategories:
+      - name: "Author"
+      - name: "Protagonist"
+        textfield: true # an optional key that, if true, will add a text field next to the checkbox
+
+  - name: "Comment"
+    type: "text" # this will render just a text field without a checkbox.
+
+edit_prompt: true
+answers: true
+default_prompt: "Classify the following spans"
