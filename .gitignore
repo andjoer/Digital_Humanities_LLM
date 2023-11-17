@@ -9,3 +9,4 @@ LLM/tune_eval.sh
 LLM/semantic_scholar/
 LLM/data/train_test_datasets/run_1_Cheung/
 LLM/results/
+Annotation/sample_images/

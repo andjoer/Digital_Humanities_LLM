@@ -3,16 +3,19 @@ from typing import List, Tuple, Optional, Dict
 import yaml
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QPushButton, QCheckBox, QVBoxLayout, QWidget, QTabWidget, QGridLayout, QHBoxLayout, QLabel, QMessageBox
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QFont
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QPixmap
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFileDialog, QComboBox, QLineEdit
+from PyQt5.QtWidgets import QFileDialog, QComboBox, QLineEdit, QGraphicsView, QGraphicsScene
 import pandas as pd
 import pickle
+import os
+from PyQt5 import QtCore
 
 @dataclass
 class Annotation:
-    text: List[str]  # list of texts for multiple fields
-    mode: str  # 'categorize' or 'answer'
+    text: List[str] = None # list of texts for multiple fields
+    image_paths: List[str] = field(default_factory=list)  # field for image paths
+    done: bool = False  # 'categorize' or 'answer'
     categories: List[str] = field(default_factory=list)
     spans: Dict[int, List[Tuple[int, int]]] = field(default_factory=dict)  # key: index of text, value: list of (start, end) spans
     answer: Optional[str] = None
@@ -63,7 +66,10 @@ class AnnotationApp(QMainWindow):
         self.save_annotations_btn.clicked.connect(self.save_annotations)
         file_handling_layout.addWidget(self.save_annotations_btn)
 
-
+         # Add a button for loading image folder
+        self.load_image_folder_btn = QPushButton('Load Image Folder', self)
+        self.load_image_folder_btn.clicked.connect(self.load_image_folder)
+        file_handling_layout.addWidget(self.load_image_folder_btn)
         # Create the annotation tab
         self.annotation_tab = QWidget(self)
         self.tabs.addTab(self.annotation_tab, "Annotation")
@@ -73,15 +79,18 @@ class AnnotationApp(QMainWindow):
 
         # Text display area
         self.text_displays = []  # List to hold the QTextEdit widgets
+        if 'text_columns' in self.config:
+            for col_name in (self.config['text_columns']):
+                label = QLabel(col_name, self)  # Adding a label for clarity
+                annotation_layout.addWidget(label)
 
-        for col_name in (self.config['text_columns']):
-            label = QLabel(col_name, self)  # Adding a label for clarity
-            annotation_layout.addWidget(label)
-
-            text_edit = QTextEdit(self)
-            self.text_displays.append(text_edit)
-            annotation_layout.addWidget(text_edit)
+                text_edit = QTextEdit(self)
+                self.text_displays.append(text_edit)
+                annotation_layout.addWidget(text_edit)
       
+        # In your init_ui method
+        self.add_image_display_area()
+
         # Textfield for the prompt
         if self.config.get('edit_prompt', False):
             label = QLabel('Prompt', self)  # Adding a label for clarity
@@ -215,7 +224,65 @@ class AnnotationApp(QMainWindow):
         self.setWindowTitle('Text Annotation App')
         self.show()
 
-    
+    def add_image_display_area(self):
+        annotation_layout = self.annotation_tab.layout()
+
+        # Initialize QGraphicsView and QGraphicsScene for each image column
+        self.image_scenes = []  # Store QGraphicsScene for each image
+        self.image_views = []   # Store QGraphicsView for each image
+
+        for image_col in self.config.get('image_columns', []):
+            scene = QGraphicsScene(self)
+            view = QGraphicsView(scene, self)
+            view.setMinimumSize(640, 480)  # Adjust the size as necessary
+            self.image_scenes.append(scene)
+            self.image_views.append(view)
+            annotation_layout.addWidget(view)
+
+    def load_image_folder(self):
+        self.config['image_columns'] = [None]
+        self.init_ui()
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Image Folder")
+        if folder_path:
+            # Get a list of all image files in the folder
+            image_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+
+            # Reset current annotations and create new ones for each image file
+            self.annotations = []
+            for image_path in image_files:
+                new_annotation = Annotation(
+                    text=[],  # No text data
+                    image_paths = [image_path],  # Image path
+                    done=False,
+                    categories=[],
+                    spans={},
+                    answer=None,
+                    prompt=None,
+                    skip=False
+                )
+                self.annotations.append(new_annotation)
+
+            # Reset current index and update display
+            self.current_idx = 0
+            self.show_images()
+
+    def show_images(self):
+        
+        for i, image_path in enumerate(self.annotations[self.current_idx].image_paths):
+     
+            if i < len(self.image_scenes):
+     
+                pixmap = QPixmap(image_path)
+                
+                # Clear the scene and add the new pixmap
+                self.image_scenes[i].clear()
+                self.image_scenes[i].addPixmap(pixmap)
+
+                # Convert QRect to QRectF and then set the scene's size
+                rect = pixmap.rect()
+                rectF = QtCore.QRectF(rect)
+                self.image_scenes[i].setSceneRect(rectF)
+
     def update_category_label(self, state, label):
         bold_font = QFont()
         bold_font.setBold(state == Qt.Checked)
@@ -297,7 +364,6 @@ class AnnotationApp(QMainWindow):
 
         # Assuming `self.subtextfields` contains the text fields for subcategories:
         for main_cat in self.main_cat_children.keys():
-            print(main_cat)
             label_dict = {}
             checkboxes = self.main_cat_children[main_cat]
             for checkbox in checkboxes: 
@@ -325,9 +391,12 @@ class AnnotationApp(QMainWindow):
             answer = self.config['default_answer']
         else: 
             answer = None
+        
+        current_images = self.annotations[self.current_idx].image_paths
         current_annotation = Annotation(
             text=[text_display.toPlainText() for text_display in self.text_displays],
-            mode=self.config['mode'],
+            image_paths=current_images,
+            done=True,
             categories=categories_selected,
             spans= self.selected_spans,
             answer=answer,
@@ -343,7 +412,8 @@ class AnnotationApp(QMainWindow):
     def get_next_idx(self):
         # Get the index for the next annotation
         for idx, annotation in enumerate(self.annotations):
-            if annotation.mode is None:
+            print(idx)
+            if not annotation.done:
                 self.current_idx = idx
                 return 
             
@@ -405,7 +475,6 @@ class AnnotationApp(QMainWindow):
         
         previous_idx = self.current_idx
         self.get_next_idx()
-
         if previous_idx == self.current_idx:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)  # Set the icon to Information (can also use Warning, Critical, etc.)
@@ -416,8 +485,11 @@ class AnnotationApp(QMainWindow):
 
         else:
             self.reset_selection()
-            for i, text_column in enumerate(self.config['text_columns']):
-                self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
+            if 'text_columns' in self.config:
+                for i, text_column in enumerate(self.config['text_columns']):
+                    self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
+            if 'image_columns' in self.config:
+                self.show_images()
 
 
 
@@ -429,7 +501,7 @@ class AnnotationApp(QMainWindow):
     def handle_skip(self):
         current_annotation = Annotation(
             text=[text_display.toPlainText() for text_display in self.text_displays],
-            mode=self.config['mode'],
+            done = True,
             categories=[],
             spans={},
             answer=None,
@@ -466,7 +538,7 @@ class AnnotationApp(QMainWindow):
                 for i in range(self.column_dropdown.count()):
                     print(self.column_dropdown.itemText(i))
                 texts = [[row[col] for col in self.config['text_columns']] for _, row in self.dataframe.iterrows()]
-                self.annotations = [Annotation(text=text_list, mode=None, categories=[], spans={}, answer=None, prompt=None, skip=False) for text_list in texts]
+                self.annotations = [Annotation(text=text_list, done=False, categories=[], spans={}, answer=None, prompt=None, skip=False) for text_list in texts]
                 for i, text_column in enumerate(self.config['text_columns']):
                     self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
     
@@ -491,8 +563,9 @@ class AnnotationApp(QMainWindow):
 
     def update_display(self):
         # Update text display
-        for i, text_column in enumerate(self.config['text_columns']):
-            self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
+        if 'text_columns' in self.config:
+            for i, text_column in enumerate(self.config['text_columns']):
+                self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
 
         # Reset selection and checkboxes
         self.reset_selection()
@@ -540,7 +613,11 @@ class AnnotationApp(QMainWindow):
                     cursor.setPosition(end, QTextCursor.KeepAnchor)
                     cursor.mergeCharFormat(highlight_format)
 
-        
+        if 'image_columns' in self.config:
+           print('show images')
+           self.show_images()
+
+
     def save_annotations(self):
         if not self.selected_spans:
             self.selected_spans = self.annotations[self.current_idx].spans

@@ -1,4 +1,3 @@
-mode: "answer"  
 annotate_spans: true
 
 categories:
@@ -24,6 +23,9 @@ categories:
 default_answer: "Default answer"
 
 # Specify the columns to read for annotation
-text_columns:
-  - "text1"
-  - "text2"
+#text_columns:
+  #- "text1"
+  #- "text2"
+
+#image_columns:
+  #- "image1"
