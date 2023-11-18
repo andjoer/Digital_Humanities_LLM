@@ -5,6 +5,8 @@ Work in progress
 
 ## Configuring the App
 
+The Text Annotation App is designed to be highly customizable through a configuration file in YAML format. This file dictates the structure and features available within the app, allowing users to tailor the annotation environment to their specific needs. Below is an overview of how various aspects of the app can be configured:
+
 ### Text and Image Columns:
 - `text_columns`: Lists the columns from a dataset that contain the text to be annotated.
 - `image_columns`: Lists the columns that contain paths to image data for annotation.
@@ -23,10 +25,6 @@ Work in progress
 - `answers`: If `true`, it allows the user to provide an answer or annotation in a text field in the UI.
 - `default_prompt`: Sets a default prompt text in the UI.
 - `default_answer`: Sets a default answer text in the UI.
-
-Certainly, here is a step-by-step guide on how to annotate a text using the Text Annotation App, including the functionality of the various buttons:
-
-Certainly! Here's the updated guide with the additional bullet point for loading existing annotations:
 
 
 ## Annotation Process Using the Text Annotation App
