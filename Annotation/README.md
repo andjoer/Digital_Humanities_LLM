@@ -3,7 +3,8 @@ Simple App to annotate texts and text spans.
 
 Work in progress
 
-![alt text](Annotation/images/Annapp_gui.png)
+![alt text](https://github.com/andjoer/Digital_Humanities_LLM/blob/b565961fe3ae912f0ca911fde3fca7e9c504b0b0/Annotation/images/Annapp_gui.png)
+![alt text](https://github.com/andjoer/Digital_Humanities_LLM/blob/b565961fe3ae912f0ca911fde3fca7e9c504b0b0/Annotation/images/AnnoApp_images.png)
 
 ## Configuring the App
 
