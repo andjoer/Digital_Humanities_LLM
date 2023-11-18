@@ -13,14 +13,14 @@ from PyQt5 import QtCore
 
 @dataclass
 class Annotation:
-    text: List[str] = None # list of texts for multiple fields
+    text: Optional[List[str]] = None  # list of texts for multiple fields; Optional to allow None
     image_paths: List[str] = field(default_factory=list)  # field for image paths
-    done: bool = False  # 'categorize' or 'answer'
-    categories: List[str] = field(default_factory=list)
+    done: bool = False  # annotation status of this entry
+    categories: List[str] = field(default_factory=list)  # list of categories
     spans: Dict[int, List[Tuple[int, int]]] = field(default_factory=dict)  # key: index of text, value: list of (start, end) spans
-    answer: Optional[str] = None
-    prompt: Optional[str] = None
-    skip: bool = False
+    answer: Optional[str] = None  # Optional string for answer
+    prompt: Optional[str] = None  # Optional string for prompt
+    skip: bool = False  # boolean to indicate if this annotation should be skipped
 
 
 
@@ -32,13 +32,41 @@ def load_config(yaml_file_path: str) -> dict:
 class AnnotationApp(QMainWindow):
     def __init__(self, config):
         super().__init__()
-        self.annotations = [] 
-        self.config = config
+        self.annotations: List[Annotation] = [] 
+        self.config: Dict = config
+        self.textfields: List[QLineEdit] = []
+        self.subtextfields: List[QLineEdit] = []
+        self.textfield_to_label: Dict[QLineEdit, str] = {}
+        self.checkboxes: List[QCheckBox] = []
+        self.sub_checkboxes: List[QCheckBox] = []
+        self.selected_spans: Dict[int, List[Tuple[int, int]]] = {}
+        self.current_idx: int = 0
+        self.tabs: QTabWidget
+        self.file_handling_tab: QWidget
+        self.open_file_btn: QPushButton
+        self.save_annotations_btn: QPushButton
+        self.load_image_folder_btn: QPushButton
+        self.annotation_tab: QWidget
+        self.text_displays: List[QTextEdit] = []
+        self.prompt_field: Optional[QTextEdit] = None
+        self.answer_field: Optional[QTextEdit] = None
+        self.main_cat_children: Dict[str, List[List[QCheckBox]]] = {}
+        self.subtextfield_to_label: Dict[QLineEdit, str] = {}
+        self.select_span_btn: QPushButton
+        self.deselect_span_btn: QPushButton
+        self.annotate_other_span_btn: QPushButton
+        self.next_btn: QPushButton
+        self.skip_btn: QPushButton
+        self.backward_btn: QPushButton
+        self.forward_btn: QPushButton
+        self.image_scenes: List[QGraphicsScene] = []
+        self.image_views: List[QGraphicsView] = []
+
         self.init_ui()
 
         self.column_dropdown = QComboBox(self)
     
-    def init_ui(self):
+    def init_ui(self) -> None:
         self.textfields = []
         self.subtextfields = []
         self.textfield_to_label = {} 
@@ -75,7 +103,8 @@ class AnnotationApp(QMainWindow):
         self.tabs.addTab(self.annotation_tab, "Annotation")
 
         # Create a layout for the annotation tab and add all annotation-related widgets here
-        annotation_layout = QVBoxLayout(self.annotation_tab) 
+        
+        annotation_layout: QVBoxLayout = QVBoxLayout(self.annotation_tab) 
 
         # Text display area
         self.text_displays = []  # List to hold the QTextEdit widgets
@@ -224,12 +253,12 @@ class AnnotationApp(QMainWindow):
         self.setWindowTitle('Text Annotation App')
         self.show()
 
-    def add_image_display_area(self):
+    def add_image_display_area(self)-> None:
         annotation_layout = self.annotation_tab.layout()
 
         # Initialize QGraphicsView and QGraphicsScene for each image column
-        self.image_scenes = []  # Store QGraphicsScene for each image
-        self.image_views = []   # Store QGraphicsView for each image
+        self.image_scenes: List[QGraphicsScene] = []
+        self.image_views: List[QGraphicsView] = []
 
         for image_col in self.config.get('image_columns', []):
             scene = QGraphicsScene(self)
@@ -239,7 +268,7 @@ class AnnotationApp(QMainWindow):
             self.image_views.append(view)
             annotation_layout.addWidget(view)
 
-    def load_image_folder(self):
+    def load_image_folder(self)-> None:
         self.config['image_columns'] = [None]
         self.init_ui()
         folder_path = QFileDialog.getExistingDirectory(self, "Select Image Folder")
@@ -266,7 +295,7 @@ class AnnotationApp(QMainWindow):
             self.current_idx = 0
             self.show_images()
 
-    def show_images(self):
+    def show_images(self)-> None:
         
         for i, image_path in enumerate(self.annotations[self.current_idx].image_paths):
      
@@ -283,19 +312,19 @@ class AnnotationApp(QMainWindow):
                 rectF = QtCore.QRectF(rect)
                 self.image_scenes[i].setSceneRect(rectF)
 
-    def update_category_label(self, state, label):
+    def update_category_label(self, state, label)-> None:
         bold_font = QFont()
         bold_font.setBold(state == Qt.Checked)
         label.setFont(bold_font)
 
-    def handle_span_selection(self):
+
+    def handle_span_selection(self)-> None:
 
         for active_text_display in self.text_displays:
-            idx = self.text_displays.index(active_text_display)
-
-            cursor = active_text_display.textCursor()
-            start = cursor.selectionStart()
-            end = cursor.selectionEnd()
+            idx: int = self.text_displays.index(active_text_display)
+            cursor: QTextCursor = active_text_display.textCursor()
+            start: int = cursor.selectionStart()
+            end: int = cursor.selectionEnd()
 
             # Check if a valid span is selected
             if start != end:
@@ -315,12 +344,12 @@ class AnnotationApp(QMainWindow):
                 cursor.clearSelection()
                 active_text_display.setTextCursor(cursor)
 
-    def handle_deselect_span(self):
+    def handle_deselect_span(self) -> None:
         for active_text_display in self.text_displays:
-            idx = self.text_displays.index(active_text_display)
-            cursor = active_text_display.textCursor()
-            start = cursor.selectionStart()
-            end = cursor.selectionEnd()
+            idx: int = self.text_displays.index(active_text_display)
+            cursor: QTextCursor = active_text_display.textCursor()
+            start: int = cursor.selectionStart()
+            end: int = cursor.selectionEnd()
 
             # Check if a valid span is selected
             if start != end and idx in self.selected_spans.keys():
@@ -353,7 +382,7 @@ class AnnotationApp(QMainWindow):
                 active_text_display.setTextCursor(cursor)
 
 
-    def store_current_annotation(self, insert = False):
+    def store_current_annotation(self, insert: bool = False) -> None:
 
         categories_selected = {checkbox.text():checkbox.isChecked() for checkbox in self.checkboxes}
         
@@ -409,7 +438,7 @@ class AnnotationApp(QMainWindow):
             self.annotations.insert(self.current_idx,current_annotation)
             self.current_idx += 1
 
-    def get_next_idx(self):
+    def get_next_idx(self) -> None:
         # Get the index for the next annotation
         for idx, annotation in enumerate(self.annotations):
             print(idx)
@@ -417,7 +446,7 @@ class AnnotationApp(QMainWindow):
                 self.current_idx = idx
                 return 
             
-    def reset_selection(self):
+    def reset_selection(self) -> None:
         self.selected_spans = {}
 
         for text_display in self.text_displays:
@@ -463,7 +492,7 @@ class AnnotationApp(QMainWindow):
         if self.config.get('answers', False):
             self.answer_field.setText(self.config.get('default_answer', ''))
 
-    def handle_next(self):
+    def handle_next(self) -> None:
         # Store the current annotation
         self.store_current_annotation()
         for anno in self.annotations:
@@ -493,12 +522,12 @@ class AnnotationApp(QMainWindow):
 
 
 
-    def handle_annotate_other_span(self):
+    def handle_annotate_other_span(self) -> None:
        self.store_current_annotation(insert=True)
        self.reset_selection()
 
 
-    def handle_skip(self):
+    def handle_skip(self) -> None:
         current_annotation = Annotation(
             text=[text_display.toPlainText() for text_display in self.text_displays],
             done = True,
@@ -515,7 +544,7 @@ class AnnotationApp(QMainWindow):
         self.text_display.setText(self.annotations[self.current_idx].text)
 
 
-    def open_file(self):
+    def open_file(self) -> None:
         options = QFileDialog.Options()
         file_name, _ = QFileDialog.getOpenFileName(self, "Open File", "", "CSV Files (*.csv);;Pandas Pickle Files (*.pkl);;Annotation App Files (*.ano);;All Files (*)", options=options)
         
@@ -538,11 +567,15 @@ class AnnotationApp(QMainWindow):
                 for i in range(self.column_dropdown.count()):
                     print(self.column_dropdown.itemText(i))
                 texts = [[row[col] for col in self.config['text_columns']] for _, row in self.dataframe.iterrows()]
-                self.annotations = [Annotation(text=text_list, done=False, categories=[], spans={}, answer=None, prompt=None, skip=False) for text_list in texts]
-                for i, text_column in enumerate(self.config['text_columns']):
-                    self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
+                self.annotations = [Annotation(text=text_list, image_paths=None, done=False, categories=[], spans={}, answer=None, prompt=None, skip=False) for text_list in texts]
+                if 'text_columns' in self.config:
+                    for i, text_column in enumerate(self.config['text_columns']):
+                        self.text_displays[i].setText(self.annotations[self.current_idx].text[i])
+
+                if 'image_columns' in self.config: 
+                    self.show_images()
     
-    def handle_backward(self):
+    def handle_backward(self) -> None:
 
         if not self.selected_spans:                                        # if this is an already existent annotation
             self.selected_spans = self.annotations[self.current_idx].spans
@@ -561,7 +594,7 @@ class AnnotationApp(QMainWindow):
         
             self.update_display()
 
-    def update_display(self):
+    def update_display(self) -> None:
         # Update text display
         if 'text_columns' in self.config:
             for i, text_column in enumerate(self.config['text_columns']):
@@ -618,7 +651,7 @@ class AnnotationApp(QMainWindow):
            self.show_images()
 
 
-    def save_annotations(self):
+    def save_annotations(self) -> None:
         if not self.selected_spans:
             self.selected_spans = self.annotations[self.current_idx].spans
         self.store_current_annotation()
