@@ -1,5 +1,5 @@
-# Text Annotation App
-Simple App to annotate texts and text spans. 
+# Text and Image Annotation App
+Simple App to annotate texts, text spans and images. Customizable with a YAML file.  
 
 Work in progress
 
