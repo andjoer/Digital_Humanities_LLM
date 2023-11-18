@@ -3,6 +3,8 @@ Simple App to annotate texts and text spans.
 
 Work in progress
 
+![alt text](Annotation/images/Annapp_gui.png)
+
 ## Configuring the App
 
 The Text Annotation App is designed to be highly customizable through a configuration file in YAML format. This file dictates the structure and features available within the app, allowing users to tailor the annotation environment to their specific needs. Below is an overview of how various aspects of the app can be configured:
