@@ -35,7 +35,8 @@ Regex is a powerful tool used in Chunkyfy to specify patterns of text. Users can
 ### Adding and Configuring Frames
 
 1. **Creating a Frame**: Users can create multiple frames, each with its own set of conditions.
-2. **Adding Regex Lines**: Within each frame, users can add regex lines to define the search criteria.
+2. **Frame Color**: Each frame is color-coded for easy distinction.
+3. **Adding Regex Lines**: Within each frame, users can add regex lines to define the search criteria.
 
 ### Defining Search Criteria
 
@@ -44,7 +45,15 @@ For each regex pattern, users can specify:
 1. **Occurrence Count**: Define the minimum and maximum number of times the pattern should appear in a chunk.
 2. **Case Sensitivity**: Choose whether the search should be case-sensitive.
 3. **Direct Speech Consideration**: Specify whether the pattern should be searched only within direct speech, outside of it, or regardless of it.
-4. **Character Span**: Define the number of characters before and after the regex match to include in the chunk.
+4. **Character before and after**: Define the number of characters before and after the regex match to include in the chunk.
+
+- **Purpose**: These settings within a regex line define a focused search radius around the initial regex match that determined the chunk. They specify how much of the initially extracted chunk should be considered when checking for other regex patterns in the same line.
+- **Functionality**:
+  - **Characters Before**: Determines how many characters before the initially found regex match (that defined the chunk) are considered in this secondary validation.
+  - **Characters After**: Specifies the number of characters after the initially found regex match to include in the validation check.
+- **Usage Scenarios**:
+  - **Non-zero Settings**: If 'Characters Before' and/or 'Characters After' are set to non-zero values, only the portion of the chunk within this defined radius is considered when checking for occurrences of the additional regex patterns in the line.
+  - **Zero Settings**: If both are set to zero, the entire chunk extracted during the initial search is used for further regex checks in that line.
 
 ## Processing Text
 
