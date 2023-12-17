@@ -8,8 +8,8 @@ tqdm==4.65.0
 transformers
 wandb
 datasets
-accelerate
-bitsandbytes
-transformers
+accelerate==0.21.0
+bitsandbytes==0.40.2
+transformers==4.31.0
 einops
 bs4
