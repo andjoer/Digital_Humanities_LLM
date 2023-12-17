@@ -13,3 +13,4 @@ bitsandbytes
 transformers
 einops
 bs4
+openai

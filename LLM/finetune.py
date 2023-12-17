@@ -75,7 +75,7 @@ class ScriptArguments:
     )
 
     use_4bit: Optional[bool] = field(
-        default=True,
+        default=False,
         metadata={"help": "Activate 4bit precision base model loading"},
     )
     use_8bit: Optional[bool] = field(
