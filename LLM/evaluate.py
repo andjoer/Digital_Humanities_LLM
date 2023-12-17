@@ -396,22 +396,21 @@ def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, 
         scores['classification_num_1'] = 1
         scores['classification_num_2'] = 1
         scores[prediction_1 + '_num_1'] = 1
-        scores[prediction_1 + '_num_2'] = 1
-        confusion_matrix = (prediction_1,prediction_1)
-    
+        scores[prediction_1 + '_num_2'] = 1    
+        
     elif prediction_2_number in response:
         scores['classification_num_1'] = 0
         scores['classification_num_2'] = 1
         scores[prediction_2 + '_num_1'] = 0
         scores[prediction_2 + '_num_2'] = 1
-        confusion_matrix = (prediction_1,response.split(',')[0])
+
 
     else: 
         scores['classification_num_1'] = 0
         scores['classification_num_2'] = 0
         scores[response.split(',')[0] + '_num_1'] = 0
         scores[response.split(',')[0] + '_num_2'] = 0
-        confusion_matrix = (prediction_1,response.split(',')[0])   
+
     
 
 

@@ -314,14 +314,22 @@ class ModelManager:
         # Load the entire model on the GPU 0
         # switch to `device_map = "auto"` for multi-GPU
         device_map = 'auto'
-
-        model = AutoModelForCausalLM.from_pretrained(
-            self.script_args.model_name, 
-            quantization_config=bnb_config, 
-            device_map=device_map, 
-            use_auth_token=True,
-            trust_remote_code=True
-        )
+        if 'mistral' in self.script_args.model_name:
+            model = AutoModelForCausalLM.from_pretrained(
+                self.script_args.model_name, 
+                #quantization_config=bnb_config, 
+                device_map=device_map, 
+                use_auth_token=True,
+                trust_remote_code=True
+            )
+        else:
+                model = AutoModelForCausalLM.from_pretrained(
+                self.script_args.model_name, 
+                #quantization_config=bnb_config, 
+                device_map=device_map, 
+                use_auth_token=True,
+                trust_remote_code=True
+            )
         
         # check: https://github.com/huggingface/transformers/pull/24906
         model.config.pretraining_tp = 1 
@@ -336,6 +344,16 @@ class ModelManager:
                 bias="none",
                 task_type="CAUSAL_LM", 
             )     
+            elif 'mistral' in self.script_args.model_name:
+                peft_config = LoraConfig(
+                    lora_alpha=self.script_args.lora_alpha,
+                    lora_dropout=self.script_args.lora_dropout,
+                    r=self.script_args.lora_r,
+                    bias="none",
+                    task_type="CAUSAL_LM", 
+                    target_modules=["q_proj", "v_proj", "k_proj", "o_proj"]
+                )            
+            
             else:  
                 peft_config = LoraConfig(
                     lora_alpha=self.script_args.lora_alpha,
