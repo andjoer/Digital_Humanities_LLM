@@ -129,6 +129,10 @@ class Evaluate():
             self.eval_dict['name'].append(name)
             self.eval_dict['score'].append('-')
 
+    def save_eval_dict(self, fname):
+        with open(fname, 'wb') as file:
+            pickle.dump(self.eval_dict, file)
+
     def process_eval_files(self, folder: str) -> None:
 
         ds_dict = self.load_ds_from_folder(folder)
@@ -142,21 +146,23 @@ class Evaluate():
     def numerical_evaluation(self, function_dict: Dict[str, Callable[[str, str], float]]) -> None:
 
         for idx, _ in enumerate(self.eval_dict['instruction']):
-            name = self.eval_dict['name'][idx] 
-            if name in function_dict:
-                evaluation = function_dict[name](self.eval_dict['response'][idx], self.eval_dict['prediction'][idx])
+            try:
+                name = self.eval_dict['name'][idx] 
+                if name in function_dict:
+                    evaluation = function_dict[name](self.eval_dict['response'][idx], self.eval_dict['prediction'][idx])
 
-                if not isinstance(evaluation, tuple):
-                    self.eval_dict['score'][idx] = evaluation
+                    if not isinstance(evaluation, tuple):
+                        self.eval_dict['score'][idx] = evaluation
 
-                else:
-                    print('in else')
-                    self.eval_dict['score'][idx] = evaluation[1]
-                    print('####')
-                    print(evaluation[1])
-                    if name not in self.confusion_matrices:
-                        self.confusion_matrices[name] = []
-                    self.confusion_matrices[name].append(evaluation[0])
+                    else:
+
+                        self.eval_dict['score'][idx] = evaluation[1]
+
+                        if name not in self.confusion_matrices:
+                            self.confusion_matrices[name] = []
+                        self.confusion_matrices[name].append(evaluation[0])
+            except: 
+                print('failed evaluation')
 
     def calc_confusion_matrix(self):
 
@@ -698,21 +704,21 @@ if __name__ == "__main__":
     "--eval_dir", 
     type=str,
     #default='data/train_test_datasets/eval/eval',  
-    #default='data/train_test_datasets/eval_categories', 
-    default='data/train_test_datasets/eval_synth'
+    default='data/train_test_datasets/eval_categories', 
+    #default='data/train_test_datasets/eval_synth'
     )
     CLI.add_argument(
     "--models",  
     nargs="*", 
     type=str,
-    default=['./results/DettmersAll7b64/final_merged_checkpoint'],  # default if nothing is provided
-    #default = ['gpt-4']
+    #default=['./results/DettmersAll7b64/final_merged_checkpoint'],  # default if nothing is provided
+    default = ['gpt-4']
     )
 
     CLI.add_argument(
     "--samples", 
     type=int,
-    default='100',  
+    default='2',  
     )
     args = CLI.parse_args()
     
@@ -760,6 +766,7 @@ if __name__ == "__main__":
 
         eval.process_eval_files(eval_folder)
         
+        eval.save_eval_dict('evaluation_dict'+model_name+'_'+suffix)
         
         eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds_clean':evaluate_examples_sent,'bsp_ds_simple_eval_clean':evaluate_examples_sent,
                                    'categories_annotation_eval':evaluate_classification,'gpt4_annotated_examples_eval':evaluate_examples_sent})

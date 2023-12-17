@@ -294,7 +294,8 @@ class ModelManager:
     
     def create_and_prepare_model(self):
         compute_dtype = getattr(torch, self.script_args.bnb_4bit_compute_dtype)
-
+        print('quantize:')
+        print(script_args.use_4bit)
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=self.script_args.use_4bit,
             load_in_8bit=self.script_args.use_8bit,
