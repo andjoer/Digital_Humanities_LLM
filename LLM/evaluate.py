@@ -9,14 +9,14 @@ import numpy as np
 import transformers
 import torch
 import ast 
-from typing import List, Dict, Any, Callable, Union, Optional, Set
+from typing import List, Dict, Any, Callable, Union, Optional, Set, Tuple
 import re
 import os
 from peft import AutoPeftModelForCausalLM
 import argparse
 from os import environ
 
-from utils import formatting_func_standard, formatting_func_chat
+from utils import formatting_func_standard, formatting_func_chat, formatting_func_api,openAi_gen, calculate_confusion_matrix
 
 
 class Evaluate():
@@ -46,31 +46,42 @@ class Evaluate():
                  samples_per_ds: int = 2,
                  lora: bool = True):
         
+        self.confusion_matrices = {}
         self.samples_per_ds: int = samples_per_ds
  
-        
-        self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(model)
-        
-
-        self.pipeline: pipeline = transformers.pipeline(
-            "text-generation",
-            model=model,
-            torch_dtype=torch.float16,
-            device_map= {"":0},
-            trust_remote_code=True,
-            tokenizer=self.tokenizer
-        )
-
-        if "llama" in model.lower() and "chat" in model.lower():
-            self.separator = '[/INST]'
-            self.user_separator = '<</SYS>>'
-            self.formatting_function = formatting_func_chat
-            
-            print('using chat model')
-        else:
-            self.separator = '### assistant:'
+        if "gpt-4" in model.lower():
+            self.separator = '### assistant'
             self.user_separator = '### human:'
-            self.formatting_function = formatting_func_standard
+            self.formatting_function = formatting_func_api
+
+        else:
+
+            self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(model)
+            
+
+            self.pipeline: pipeline = transformers.pipeline(
+                "text-generation",
+                model=model,
+                torch_dtype=torch.float16,
+                device_map= {"":0},
+                trust_remote_code=True,
+                tokenizer=self.tokenizer
+            )
+
+            if "llama" in model.lower() and "chat" in model.lower():
+                self.separator = '[/INST]'
+                self.user_separator = '<</SYS>>'
+                self.formatting_function = formatting_func_chat
+                
+                print('using chat model')
+
+
+            else:
+                self.separator = '### assistant:'
+                self.user_separator = '### human:'
+                self.formatting_function = formatting_func_standard
+
+        self.model = model
 
         self.eval_dict: Dict[str, List[Union[str, float]]] = {'name':[],'instruction':[],'response':[],'prediction':[],'score':[]}
 
@@ -93,19 +104,26 @@ class Evaluate():
             inst_resp = sample.split(self.separator)
 
             prompt = inst_resp[0] + self.separator
- 
-            prediction = self.pipeline(
-            prompt,
-            do_sample=False,
-            temperature = 0.0,
-            top_p=0.9,
-            num_return_sequences=1,
-            eos_token_id=self.tokenizer.eos_token_id,
-            max_new_tokens = 500,
-            return_full_text=False
-            )[0]['generated_text']
 
-            self.eval_dict['instruction'].append(prompt.split(self.user_separator)[1])
+            if 'gpt-4' in self.model.lower():
+                prediction = openAi_gen(prompt)
+
+            else:
+                prediction = self.pipeline(
+                prompt,
+                do_sample=False,
+                temperature = 0.0,
+                top_p=0.9,
+                num_return_sequences=1,
+                eos_token_id=self.tokenizer.eos_token_id,
+                max_new_tokens = 500,
+                return_full_text=False
+                )[0]['generated_text']
+
+            if 'gpt-4' in self.model.lower():
+                self.eval_dict['instruction'].append(prompt)
+            else:
+                self.eval_dict['instruction'].append(prompt.split(self.user_separator)[1])
             self.eval_dict['response'].append(inst_resp[1])
             self.eval_dict['prediction'].append(prediction)
             self.eval_dict['name'].append(name)
@@ -126,11 +144,29 @@ class Evaluate():
         for idx, _ in enumerate(self.eval_dict['instruction']):
             name = self.eval_dict['name'][idx] 
             if name in function_dict:
-                self.eval_dict['score'][idx] = function_dict[name](self.eval_dict['response'][idx], self.eval_dict['prediction'][idx])
+                evaluation = function_dict[name](self.eval_dict['response'][idx], self.eval_dict['prediction'][idx])
+
+                if not isinstance(evaluation, tuple):
+                    self.eval_dict['score'][idx] = evaluation
+
+                else:
+                    print('in else')
+                    self.eval_dict['score'][idx] = evaluation[1]
+                    print('####')
+                    print(evaluation[1])
+                    if name not in self.confusion_matrices:
+                        self.confusion_matrices[name] = []
+                    self.confusion_matrices[name].append(evaluation[0])
+
+    def calc_confusion_matrix(self):
+
+        self.confusion_matrices =  {key: calculate_confusion_matrix(value) for key, value in self.confusion_matrices.items()}
+    
 
     def create_score_statistics(self) -> None:
 
         score_df = pd.DataFrame.from_dict(self.eval_dict)
+        print(score_df.head())
 
         names = list(set(list(score_df['name'])))
 
@@ -142,6 +178,8 @@ class Evaluate():
             
             score_dict = {}
             for _ , row in name_df.iterrows():
+                print('###')
+                print(row['score'])
                 if isinstance(row['score'],dict):
                     for key in row['score'].keys():
                         
@@ -283,6 +321,95 @@ def evaluate_examples_elastic(response: str, prediction: str, sentence_model: Se
 
     return {'total_distance':get_semantic_distance(response,prediction,sentence_model)}
 
+
+def extract_category(text, valid_categories):
+    # Create a regex pattern to match any of the valid categories
+    pattern = r'\b(' + '|'.join(re.escape(category) for category in valid_categories) + r')\b'
+    
+    # Search for the pattern in the text
+    match = re.search(pattern, text)
+    
+    # Return the found category or None if no match is found
+    return match.group(0) if match else None
+
+def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, str], Dict[str, float]]:
+
+    valid = ['1a','1b','2a','2b','3a','3b','4a','4b','4c','4d','4e','5','6']
+
+    scores = {}
+
+    response = response.split('kategorie:')[-1]
+
+    prediction = prediction.split('***')
+    try:
+        prediction_1 = prediction[1]
+        prediction_1 = extract_category(prediction_1,valid)
+    except:
+        prediction_1 = 'z'
+
+    try:
+        prediction_2 = prediction[2].strip()
+        if prediction_2:
+            prediction_2 = extract_category(prediction_2,valid)
+        else:
+            prediction_2 = extract_category(prediction[3],valid)
+    except: 
+        prediction_2 = 'z'
+
+    try:
+        prediction_1_number = re.findall(r'\d+', prediction_1)[0]
+    except: 
+        pass
+    try:
+        prediction_2_number = re.findall(r'\d+', prediction_2)[0]
+    except: 
+        pass
+    if prediction_1 in response: 
+        scores['classification_1'] = 1
+        scores['classification_2'] = 1
+        scores[prediction_1 + '_1'] = 1
+        scores[prediction_1 + '_2'] = 1
+        confusion_matrix = (prediction_1,prediction_1)
+    
+    elif prediction_2 in response:
+        scores['classification_1'] = 0
+        scores['classification_2'] = 1
+        scores[prediction_2 + '_1'] = 0
+        scores[prediction_2 + '_2'] = 1
+        confusion_matrix = (prediction_1,response.split(',')[0])
+
+    else: 
+        scores['classification_1'] = 0
+        scores['classification_2'] = 0
+        scores[response.split(',')[0] + '_1'] = 0
+        scores[response.split(',')[0] + '_2'] = 0
+        confusion_matrix = (prediction_1,response.split(',')[0])   
+
+
+    if prediction_1_number in response: 
+        scores['classification_num_1'] = 1
+        scores['classification_num_2'] = 1
+        scores[prediction_1 + '_num_1'] = 1
+        scores[prediction_1 + '_num_2'] = 1
+        confusion_matrix = (prediction_1,prediction_1)
+    
+    elif prediction_2_number in response:
+        scores['classification_num_1'] = 0
+        scores['classification_num_2'] = 1
+        scores[prediction_2 + '_num_1'] = 0
+        scores[prediction_2 + '_num_2'] = 1
+        confusion_matrix = (prediction_1,response.split(',')[0])
+
+    else: 
+        scores['classification_num_1'] = 0
+        scores['classification_num_2'] = 0
+        scores[response.split(',')[0] + '_num_1'] = 0
+        scores[response.split(',')[0] + '_num_2'] = 0
+        confusion_matrix = (prediction_1,response.split(',')[0])   
+    
+
+
+    return (confusion_matrix, scores)
 
 def evaluate_examples(response: str, prediction: str, sentence_model: SentenceTransformer) -> Dict:
 
@@ -535,6 +662,26 @@ def get_file_suffix() -> str:
 
     return str(max_num+1)
 
+def write_confusion_matrices_to_file(conf_matrices,fname):
+    """
+    Write confusion matrices to a file.
+
+    :param conf_matrices: Dictionary of confusion matrices.
+    :param filename: Name of the file to write to.
+    """
+
+    fname = 'evaluation/'+fname
+    with open(fname, 'w') as file:
+        for key, matrix in conf_matrices.items():
+            # Write the key
+            file.write(f"{key}\n")
+            # Write the confusion matrix as a readable table
+            print(matrix)
+            file.write(str(matrix))
+            # Write two new lines before the next key
+            file.write("\n\n")
+
+
 if __name__ == "__main__":
 
     output_dir_exist = os.path.exists('evaluation')
@@ -550,19 +697,22 @@ if __name__ == "__main__":
     CLI.add_argument(
     "--eval_dir", 
     type=str,
-    default='data/train_test_datasets/run_6_onlybsp_simple/eval',  
+    #default='data/train_test_datasets/eval/eval',  
+    #default='data/train_test_datasets/eval_categories', 
+    default='data/train_test_datasets/eval_synth'
     )
     CLI.add_argument(
     "--models",  
     nargs="*", 
     type=str,
-    default=['./results/LlamaChatOnlyBspSimp7b64/checkpoint-300-merged'],  # default if nothing is provided
+    default=['./results/DettmersAll7b64/final_merged_checkpoint'],  # default if nothing is provided
+    #default = ['gpt-4']
     )
 
     CLI.add_argument(
     "--samples", 
     type=int,
-    default='70',  
+    default='100',  
     )
     args = CLI.parse_args()
     
@@ -588,9 +738,15 @@ if __name__ == "__main__":
 
     statistics = {}
     for model in models: 
-  
-        model_name = model.split('/')[2]
-        model_ckpt = extract_number(model.split('/')[3])
+        try:
+            model_name = model.split('/')[2]
+            model_ckpt = extract_number(model.split('/')[3])
+        except:
+            model_name = model
+            model_ckpt = None
+
+
+       
 
         if model_ckpt is not None:
             model_name += '_'+model_ckpt
@@ -605,9 +761,14 @@ if __name__ == "__main__":
         eval.process_eval_files(eval_folder)
         
         
-        eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds':evaluate_examples_sent,'bsp_ds_simple_eval':evaluate_examples_sent})
+        eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds_clean':evaluate_examples_sent,'bsp_ds_simple_eval_clean':evaluate_examples_sent,
+                                   'categories_annotation_eval':evaluate_classification,'gpt4_annotated_examples_eval':evaluate_examples_sent})
 
         write_readable_evaluation(eval.eval_dict,'evaluation_'+model_name+'_'+suffix)
+
+        if eval.confusion_matrices:
+            eval.calc_confusion_matrix()
+            write_confusion_matrices_to_file(eval.confusion_matrices,model_name+'_confusion.txt')
 
         eval.create_score_statistics()
 

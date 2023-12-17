@@ -1,0 +1,16 @@
+idx,DettmersAll7b64_2500
+arguments;score,0.16812169312169314
+arguments;score binary,0.41464579659024103
+bsp_ds_clean;Beispiel,0.7533505310614904
+bsp_ds_clean;Beispiel_für,0.5151952169835567
+bsp_ds_clean;Erzählposition,0.6611111111111111
+bsp_ds_clean;erzählposition_binary,0.3333333333333333
+bsp_ds_clean;Wiedergabeform,0.05555555555555555
+bsp_ds_clean;in_gedankengang,0.1111111111111111
+bsp_ds_clean;Modus_Zeit,0.0
+bsp_ds_clean;total_distance,0.8577289879322052
+bsp_ds_clean;Modus_Zeit_Beispiel,0.656250461935997
+bsp_ds_clean;Modus_Zeit_Text,0.5
+bsp_ds_clean;wiedergabe_binary,0.6666666666666666
+redewiedergabe;score,0.4603888888888889
+redewiedergabe;score binary,0.5485714285714285

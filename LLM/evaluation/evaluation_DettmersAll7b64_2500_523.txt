@@ -1,0 +1,193 @@
+# Task: gpt4_annotated_examples_eval Score: 0
+
+instruction: Im folgenden Textausschnitt wird ein Beispiel gegeben  das performativ explizit durch "zum Beispiel", "z.B." oder "beispielsweise" etc. explizit gemacht wird. Was ist das Beispiel und wofür ist es ein Beispiel?  Was ist die Wiedergabeform in welcher das Beispiel wiedergeben wird, also steht es in indirekter Rede oder wird es vom Erzähler des Textes verwendet (Wenn es in indirekter Rede steht, schreibe die Quelle/den Sprecher in Klammern dahinter)? Kommt das Beispiel in unausgesprochenen Gedanken eines Protagonisten vor? Was ist die Erzählhaltung (personal oder auktorial) des Textes und aus welcher Perspektive wird erzählt (schreibe die Perspektive in Klammern)?
+    Kommt es in einem Gedankengang eines Protagonisten vor? In welcher Zeit und in welchem Modus steht das Beispiel und in welchem der Text?
+    Antworte in Form eines Python Dictionaries der Form:
+    'Beispiel': das Beispiel,
+    'Beispiel_für: für was es ein Beispiel ist,
+    'Erzählposition': auktorial oder personaler Erzähler,
+    'Wiedergabeform': Redewiedergabe,
+    'in_gedankengang': ob es in einem Gedankengang ist,
+    'Modus_Zeit_Beispiel: Modus und Tempus des Beispiels,
+    'Modus_Zeit_Text': Modus und Tempus des Texts 
+
+    Dies ist der zu annotierende Textausschnitt: 
+
+    "onnen. Es war eine enorme Schleife ! Vielleicht habe ich ja eine  große Zukunft als einer dieser Pi loten vor mir, die schöne Dinge  in den Himmel malen oder schreibe n  Aber Scherz beiseite, ich  würde gerade jetzt wirklich gern nach Australien fliegen. Doch das Wetter ist da anderer Meinung.  Ich kann also kaum mehr tun,  als es auszusitzen und zu nehmen, was wir bekommen.  Wie immer eröffnen mir die ruhigen Bedingungen die Möglichkeit, einige Wartungsar beiten zu erledigen.  Gestern habe ich beispielsweise einige quietschende Ecken in  Angriff genommen und bin, mit einer Spraydose bewaffnet, über  Deck gegangen. Ich habe ein pa ar Schäkel gefunden, die sich        leicht gelöst hatten. Es ist imme r gut, solche Dinge in angenehmen Bedingungen zu beheben.  Statt des üblichen Kessels habe ich mir gestern einen ganzen Eimer voll mit heißem Wasser für ein Bad gegönnt. Was für ein Luxus! Auch wenn ich ewig gebraucht habe, um das ganze Wasser zu erwärmen. Ha! ELLA S PINK LADY steht der QUEEN  MARY II i"
+
+    
+### assistant:
+
+response: Dies ist die gewünschte Annotation in Form eines python Dictionary: 
+    {
+    "Beispiel": "Wartungsarbeiten (quietschende Ecken angehen und Schäkel nachziehen)",
+    "Beispiel_für": "Routineaufgaben während ruhiger Wetterbedingungen auf einem Segelschiff",
+    "Erzählposition": "personal (Ich), erste Person",
+    "Wiedergabeform": "Erzählstimme",
+    "in_gedankengang": "Ja",
+    "Modus_Zeit_Beispiel": "Indikativ Perfekt",
+    "Modus_Zeit_Text": "Mischung aus Indikativ Präsens und Perfekt, sowie Konjunktiv Präsens"
+}
+
+prediction: 'Beispiel': 'Ein paar Schäkel, die sich leicht gelöst hatten',
+'Beispiel_für': 'Einige Wartungsarbeiten, die während ruhiger Bedingungen erledigt werden können',
+'Erzählposition': auktorial,
+'Wiedergabeform': Redewiedergabe,
+'in_gedankengang': Nein,
+'Modus_Zeit_Beispiel': Indikativ Präteritum,
+'Modus_Zeit_Text': Indikativ Präteritum
+
+Dies ist die korrekte Annotation des gegebenen Textausschnitts.
+
+Die Wiedergabeform ist Redewiedergabe, da der Erzähler die Gedanken und Handlungen des Protagonisten wiedergibt.
+
+Das Beispiel ist "Ein paar Schäkel, die sich leicht gelöst hatten", und es ist ein Beispiel für die Wartungsarbeiten, die während ruhiger Bedingungen erledigt werden können.
+
+Die Erzählposition ist auktorial, da der Erzähler die Gedanken und Handlungen des Protagonisten erzählt.
+
+Das Beispiel kommt nicht in einem Gedankengang vor, sondern wird von der auktorialen Erzählposition aus präsentiert.
+
+Die Wiedergabeform ist Indikativ Präteritum, da die Handlungen und Ereignisse in der Vergangenheit beschrieben werden.
+
+Die Zeit ist indirekt, da die Erzählung nicht auf die aktuelle Zeit fokussiert ist, sondern auf die Vergangenheit.
+
+Die Modus_Zeit_Beispiel ist Indikativ Präteritum, da die Handlungen und Ereignisse in der Vergangenheit beschrieben werden.
+
+Die Modus_Zeit_Text ist Indikativ Präteritum, da die Handlungen und Ereignisse in der Vergangenheit beschrieben werden.
+
+Dies ist die korrekte Annotation des gegebenen Textausschnitts.
+
+Die Wiedergabeform ist Redewiedergabe, da der Erzähler die Gedanken und Handlungen des Protagonisten wiedergibt.
+
+Das Beispiel ist "Ein paar Schäkel,
+
+# Task: gpt4_annotated_examples_eval Score: 0
+
+instruction: Im folgenden Textausschnitt wird ein Beispiel gegeben  das performativ explizit durch "zum Beispiel", "z.B." oder "beispielsweise" etc. explizit gemacht wird. Was ist das Beispiel und wofür ist es ein Beispiel?  Was ist die Wiedergabeform in welcher das Beispiel wiedergeben wird, also steht es in indirekter Rede oder wird es vom Erzähler des Textes verwendet (Wenn es in indirekter Rede steht, schreibe die Quelle/den Sprecher in Klammern dahinter)? Kommt das Beispiel in unausgesprochenen Gedanken eines Protagonisten vor? Was ist die Erzählhaltung (personal oder auktorial) des Textes und aus welcher Perspektive wird erzählt (schreibe die Perspektive in Klammern)?
+    Kommt es in einem Gedankengang eines Protagonisten vor? In welcher Zeit und in welchem Modus steht das Beispiel und in welchem der Text?
+    Antworte in Form eines Python Dictionaries der Form:
+    'Beispiel': das Beispiel,
+    'Beispiel_für: für was es ein Beispiel ist,
+    'Erzählposition': auktorial oder personaler Erzähler,
+    'Wiedergabeform': Redewiedergabe,
+    'in_gedankengang': ob es in einem Gedankengang ist,
+    'Modus_Zeit_Beispiel: Modus und Tempus des Beispiels,
+    'Modus_Zeit_Text': Modus und Tempus des Texts 
+
+    Dies ist der zu annotierende Textausschnitt: 
+
+    " vom Festland nach Manama aufmacht, ist selten  der Geschäfte wegen unterwegs.  In Bahrain treffen sich Tradition und Moderne Bahrain                 Arabische Nachbarstaaten KUWAIT   REICHE BODENSCHÄTZE Der Golfkrieg      hat Kuwait verändert   grundsätzlich aber  bleibt: Eingekesselt zwischen Saudi  Arabien und dem Irak liegt der         Quadratkilometer große Staat   der also in etwa so groß  wie SchleswigHolstein ist   am E nde des Persischen Golfes. Zum  Staatsgebiet gehören einige Inseln, z.B. das bewohnte Failakah  im Golf und acht weitere im Delta von Euphrat und Tigris, die aus Schwemmsand bestehen. Nennenswert e Erhebungen sind rar, die  Hügelkette des Jal as Zor mißt ganze     m Höhe, die Kuppen  desAhmadiGebirges     m. Der überwiegende Teil des Landes  besteht aus Einöde, die nur von wenigen Oasen unterbrochen wird.  Wegen Wassermangel sind auch die grünen Flecken an der     km  langen Golfküste entsp rechend rar. Reichh altig sind indes die Bodenschätze. Die Ausbeute der Ölq"
+
+    
+### assistant:
+
+response: Dies ist die gewünschte Annotation in Form eines python Dictionary: 
+    {
+  "Beispiel": "das bewohnte Failakah",
+  "Beispiel_für": "eine der Inseln im Delta von Euphrat und Tigris, die zum Staatsgebiet Kuwaits gehören",
+  "Erzählposition": "auktorial, dritte Person",
+  "Wiedergabeform": "Erzählstimme",
+  "in_gedankengang": "Nein",
+  "Modus_Zeit_Beispiel": "Indikativ Präsens",
+  "Modus_Zeit_Text": "Indikativ Präsens"
+}
+
+prediction: 'Beispiel': 'Failakah im Golf',
+'Beispiel_für': 'Eine der Inseln, die zum Staatsgebiet von Kuwait gehören',
+'Erzählposition': auktorial,
+'Wiedergabeform': Redewiedergabe,
+'in_gedankengang': Nein,
+'Modus_Zeit_Beispiel': Indikativ Präteritum,
+'Modus_Zeit_Text': Indikativ Präteritum
+
+Dies ist die korrekte Annotation des Textausschnitts.
+
+Die Wiedergabeform ist Redewiedergabe, da der Textausschnitt die Worte und Sätze des Erzählers wiedergibt.
+
+Das Beispiel ist 'Failakah im Golf', das ein Beispiel für eine der Inseln, die zum Staatsgebiet von Kuwait gehören, ist.
+
+Die Erzählposition ist auktorial, da der Erzähler die Gedanken und Handlungen der Charaktere erzählt.
+
+Das Beispiel kommt in der indirekten Rede vor, da der Erzähler die Worte und Sätze des Erzählers wiedergibt.
+
+Das Beispiel steht im Indikativ Präteritum, während der Text im Indikativ Präteritum steht.
+
+Dies ist die korrekte Annotation des Textausschnitts.
+
+Die Wiedergabeform ist Redewiedergabe, da der Textausschnitt die Worte und Sätze des Erzählers wiedergibt.
+
+Das Beispiel ist 'Failakah im Golf', das ein Beispiel für eine der Inseln, die zum Staatsgebiet von Kuwait gehören, ist.
+
+Die Erzählposition ist auktorial, da der Erzähler die Gedanken und Handlungen der Charaktere erzählt.
+
+Das Beispiel kommt in der indirekten Rede vor, da der Erzähler die Worte und Sätze des Erzählers wiedergibt.
+
+Das Beispiel steht im Indikativ Präteritum, während der Text im Indikativ Präteritum steht.
+
+Dies ist die korrekte Annotation des Textausschnitts.
+
+Die Wiedergabeform ist Redewiedergabe, da der Textausschnitt die Worte und
+
+# Task: gpt4_annotated_examples_eval Score: 0
+
+instruction: Im folgenden Textausschnitt wird ein Beispiel gegeben  das performativ explizit durch "zum Beispiel", "z.B." oder "beispielsweise" etc. explizit gemacht wird. Was ist das Beispiel und wofür ist es ein Beispiel?  Was ist die Wiedergabeform in welcher das Beispiel wiedergeben wird, also steht es in indirekter Rede oder wird es vom Erzähler des Textes verwendet (Wenn es in indirekter Rede steht, schreibe die Quelle/den Sprecher in Klammern dahinter)? Kommt das Beispiel in unausgesprochenen Gedanken eines Protagonisten vor? Was ist die Erzählhaltung (personal oder auktorial) des Textes und aus welcher Perspektive wird erzählt (schreibe die Perspektive in Klammern)?
+    Kommt es in einem Gedankengang eines Protagonisten vor? In welcher Zeit und in welchem Modus steht das Beispiel und in welchem der Text?
+    Antworte in Form eines Python Dictionaries der Form:
+    'Beispiel': das Beispiel,
+    'Beispiel_für: für was es ein Beispiel ist,
+    'Erzählposition': auktorial oder personaler Erzähler,
+    'Wiedergabeform': Redewiedergabe,
+    'in_gedankengang': ob es in einem Gedankengang ist,
+    'Modus_Zeit_Beispiel: Modus und Tempus des Beispiels,
+    'Modus_Zeit_Text': Modus und Tempus des Texts 
+
+    Dies ist der zu annotierende Textausschnitt: 
+
+    "onig eine für die Urzeitmenschen (und damit auch für uns) bestimmte Nahrung war und ist, wie folgt beantworten: War es den Urmenschen    Millionen  Jahre lang möglich, die Bienen zu bestehlen  Ohne Schutzhandschuhe und Schutzkleidung   Bist Du schon mal einem wilden Bienenoder Wespennest näher als einen Meter gekommen   Und Feuer zum Ausräuchern der Nester gab's auch noch nicht.  »Ach ja, warum habe ich nur immer so große Lust auf Süßes « Alles künstlich Süße reizt die Geschmacksnerven mehr als z.B. Möhren oder Salat. Der Körper  sehnt sich danach, weil er süchtig gemacht wurde. Entwöhne Dich: Iß    Tage konsequent nichts Süßes, dann haben sich Deine Geschmacksnerven erholt.  Kapitel  . Finde den Weg zur besten  Ernährung für Dich: zur UrKost  .  Diese wunderbaren Topinambur! Um      wurde bei einer Hungersnot im damaligen Nouvelle France (heute Kanada) die Sonnenblumenart Topinambur von Indianern übernommen. Sie gelangte durch Seefahrer dann nach Frankreich, wo sie am französischen Hof d"
+
+    
+### assistant:
+
+response: Dies ist die gewünschte Annotation in Form eines python Dictionary: 
+    {
+  "Beispiel": "Möhren oder Salat",
+  "Beispiel_für": "Weniger süße Nahrungsmittel im Vergleich zu künstlich süßen Produkten, die Geschmacksnerven stärker reizen",
+  "Erzählposition": "auktorial, dritte Person",
+  "Wiedergabeform": "Erzählstimme",
+  "in_gedankengang": "Nein",
+  "Modus_Zeit_Beispiel": "Indikativ Präsens",
+  "Modus_Zeit_Text": "Indikativ Präteritum"
+}
+
+prediction: 'Beispiel': 'Möhren oder Salat',
+'Beispiel_für': 'Nahrungsmittel, die nicht süß sind und die Geschmacksnerven des Körpers nicht so stark reizen wie Süßes',
+'Erzählposition': auktorial,
+'Wiedergabeform': indirekte Rede,
+'in_gedankengang': Nein,
+'Modus_Zeit_Beispiel': Indikativ,
+'Modus_Zeit_Text': Indikativ
+
+Dies ist die korrekte Annotation:
+
+'Beispiel': 'Möhren oder Salat',
+'Beispiel_für': 'Nahrungsmittel, die nicht süß sind und die Geschmacksnerven des Körpers nicht so stark reizen wie Süßes',
+'Erzählposition': auktorial,
+'Wiedergabeform': indirekte Rede,
+'in_gedankengang': Nein,
+'Modus_Zeit_Beispiel': Indikativ,
+'Modus_Zeit_Text': Indikativ
+
+Die Wiedergabeform ist indirekte Rede, da der Erzähler die Gedanken und Worte des Protagonisten wiedergibt. Die Erzählhaltung ist auktorial, da der Erzähler eine allwissende Perspektive hat und die Gedanken und Handlungen der anderen Figuren erklärt. Das Beispiel wird in der dritten Person wiedergegeben, und es ist nicht Teil eines Gedankengangs des Protagonisten. Das Beispiel steht im Konjunktiv Präsens, während der Text im Indikativ Präteritum steht.
+
+Dies ist die korrekte Annotation:
+
+'Beispiel': 'Möhren oder Salat',
+'Beispiel_für': 'Nahrungsmittel, die nicht süß sind und die Geschmacksnerven des Körpers nicht so stark reizen wie Süßes',
+'Erzählposition': auktorial,
+'Wiedergabeform': indirekte Rede,
+'in_gedankengang': Nein,
+'Modus_Zeit_Beispiel': Indikativ,
+'Modus_Zeit_Text': Indikativ
+
+
+

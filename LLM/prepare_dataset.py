@@ -57,8 +57,8 @@ class PrepareDataset:
                  column_prompt: str = "instruction",
                  column_response: str = "response",
                  text_separator: str = " ",
-                 max_text_chunks: int = 2000,
-                 test_size: float = 0.1) -> None:
+                 max_text_chunks: int = 10000,
+                 test_size: float = 0.15) -> None:
         
         self.input_dir = input_dir
         self.instruction_prompt = instruction_prompt
@@ -83,6 +83,7 @@ class PrepareDataset:
             text += self.format_assistant + ' ' + row[self.column_response]
 
             prompt_response_list.append(text)
+
 
         return prompt_response_list
         
@@ -152,7 +153,6 @@ class PrepareDataset:
             ds_list = self.read_file(file,extension)
             ds_name = fname.split('.')[0]
             if fname in self.eval_ds:
-
                 ds = self.list_to_ds(ds_list,split=True)
                 ds_dict_train[ds_name] = ds['train']
                 
@@ -167,10 +167,6 @@ class PrepareDataset:
 
         self.train_dataset, self.test_dataset = self.combine_datasets()
 
-
-    def prepare_datasets(self):
-
-        self.train_dataset, self.test_dataset = self.combine_datasets()
 
         #self.train_dataset = concatenate_datasets(ds_list_train).shuffle(seed=42)
         #self.test_dataset = concatenate_datasets(ds_dict_test).shuffle(seed=42)
