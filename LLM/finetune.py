@@ -99,7 +99,7 @@ class ScriptArguments:
         metadata={"help": "Quantization type fp4 or nf4"},
     )
     num_train_epochs: Optional[int] = field(                                      ####epoch
-        default=6,
+        default=10,
         metadata={"help": "The number of training epochs for the reward model."},
     )
     fp16: Optional[bool] = field(
@@ -193,7 +193,8 @@ class ConfigManager:
             'TRAIN_COLLATOR': 'train_collator',
             'EVAL_STEPS': 'eval_steps',
             'SAVE_STEPS': 'save_steps',
-            'CHECKPOINT': 'checkpoint'
+            'CHECKPOINT': 'checkpoint',
+            'EPOCHS' : 'num_train_epochs'
         }
     
     def update_from_env(self) -> None:

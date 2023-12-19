@@ -1,0 +1,13 @@
+idx,gpt-4
+categories_annotation_eval;classification_1,0.0
+categories_annotation_eval;classification_2,0.5
+categories_annotation_eval;3a_1,0.0
+categories_annotation_eval;3a_2,1.0
+categories_annotation_eval;classification_num_1,0.5
+categories_annotation_eval;classification_num_2,1.0
+categories_annotation_eval;3a_num_1,0.0
+categories_annotation_eval;3a_num_2,1.0
+categories_annotation_eval;: 4c_1,0.0
+categories_annotation_eval;: 4c_2,0.0
+categories_annotation_eval;4e_num_1,1.0
+categories_annotation_eval;4e_num_2,1.0

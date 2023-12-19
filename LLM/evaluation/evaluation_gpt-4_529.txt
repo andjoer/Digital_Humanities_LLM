@@ -1,0 +1,150 @@
+# Task: categories_annotation_eval Score: {'classification_1': 0, 'classification_2': 1, '3a_1': 0, '3a_2': 1, 'classification_num_1': 0, 'classification_num_2': 1, '3a_num_1': 0, '3a_num_2': 1}
+
+instruction:A helpful assistant, who is an expert in the fields of philosophy and literary studies, takes questions and tasks from a human. The assistant provides responses that appropriately complete the request in the same language that the human used. 
+
+: 
+Im folgenden Textausschnitt wird ein Beispiel gegeben das durch “zum Beispiel” gekennzeichnet wurde. Was ist dieses Beispiel und wofür ist es ein Beispiel? (zitiere nah am Text, möglichst wörtlich). Schreibe einen literaturwissenschaftlichen Essay über die Verwendung des Beispiels in diesem Textausschnitt. 
+
+ eine SetswanaBibel oder irgendein anderes Buch, das für die Schule nützlich war. Obgleich sie selbst nicht sehr viel las, glaubte Mma Potokwani fest an den Wert und die Macht des Buches. Je mehr Bücher Botswana hatte, desto besser für die ganze Nation. Es waren vor allem Bücher, auf denen die Zukunft aufgebaut werden würde, auf Büchern und auf den Menschen, die wussten, wie man sie einsetzte. Es wäre wunderbar, dachte sie, ein Buch zu schreiben, mit dem anderen Menschen geholfen werden konnte. Was sie betraf, so hätte sie sicherlich niemals die Zeit, so etwas zu vollbringen, und selbst wenn sie die Zeit hätte, bezweifelte sie, dass sie auch die notwendigen Fähigkeiten dazu besaß. Aber wenn sie jemals ein Buch schreiben sollte, dann würde es zweifellos den Titel Wie man eine Waisenfarm leitet tragen. Es wäre gewiss ein nützliches Buch für denjenigen, der ihre Aufgaben übernähme, wenn sie sich zur Ruhe setzte, oder auch für die vielen anderen Frauen, die anderswo Waisenfarmen leiteten. Mma Potokwani hatte viel Zeit damit verbracht, über den Inhalt eines solchen Buches nachzudenken. Es würde sich vorrangig mit den gewöhnlichen täglichen Angelegenheiten einer Waisenfarm beschäftigen: mit der z.B. ##reitung der Mahlzeiten, der Verteilung der verschiedenen Aufgaben und so weiter. Aber es würde auch ein Kapitel über die psychologischen Grundlagen enthalten, die zur Gründung und zum Betreiben einer Waisenfarm nötig waren. Darüber wusste Mma Potokwani eine ganze Menge. Sie konnte einem zum Beispiel erklären, wie wichtig es war, Brüder und Schwestern wenn irgend möglich zusammen zu lassen, oder sie konnte bei der Lösung von Verhaltensproblemen helfen. Diese hatten fast immer einen Zustand innerer Unsicherheit als Ursache, und es gab dafür eigentlich nur ein einziges Heilmittel, nämlich Liebe. Das zumindest war ihre Erfahrung, und selbst wenn die Lösung sehr simpel erschien, so war sie doch in ihren Augen die einzig richtige. Ein weiteres Kapitel   und es wäre ein sehr wichtiges   würde die Beschaffung von Spendengeldern behandeln. Jede Waisenfarm brauchte Geld und war auf Spenden angewiesen, und diese zu beschaffen war eine Aufgabe, die vorrangig über allem stand. Selbst wenn man alle anderen Aufgaben erfolgreich zu lösen imstande war, das Geldproblem war stets akut. Es war eine Sorge, die einen ständig beschäftigte. Mma Potokwani konnte sich in diesem Punkt einer besonders hohen Kompetenz rühmen. Wenn irgendetwas gebraucht wurde   zum Beispiel ein neuer Satz Kochtöpfe für eins der Häuser oder ein Paar Schuhe für ein Kind, dessen eigene Schuhe völlig verschlissen waren  , fand sie stets einen Spender, der überredet werden konnte, die nötigen Geldmittel zur Verfügung zu stellen. Nur wenige Menschen konnten Mma Potokwani widerstehen, und es ging einmal sogar so weit, dass der Vizepräsident von Botswana selbst, ein großzügiger Mann, der es sich als Verdienst anrechnete, eine Politik der offenen Tür durchgesetzt zu haben, voller Neid all die Nationen betrachtete, in denen e
+
+Entscheide nachdem du den Essay geschrieben hast basierend auf diesem Essay, in welche der folgenden Kategorien Du das Beispiel einordnen würdest:
+
+Definition narrativer Einschub:  Ein narrativer Einschub ist eine kurze, in sich abgeschlossene Erzählung innerhalb einer größeren Geschichte. Diese Erzählung unterscheidet sich durch eigene Charaktere, eine eigenständige Handlung und einen spezifischen Kontext von der Haupterzählung. Sie trägt zur Gesamterzählung bei, indem sie zusätzliche Themen oder Ideen einführt, besitzt jedoch auch einen eigenständigen narrativen Wert. Der Einschub sollte klar von der Haupterzählung abgegrenzt sein, etwa durch einen Wechsel im Erzählstil oder einen deutlich anderen Erzählkontext. Nichts sonst ist ein narrativer Einschub. 
+
+Kategorien: 
+
+1a) Narratives Beispiel: Im alltäglichen Gebrauch dient ein Beispiel dazu etwas zu veranschaulichen oder um ein Argument bzw. eine These zu stützen. Doch der Literatur gibt es auch Konstruktionen, in welchen das Beispiel in die andere Richtung funktioniert. Das Beispiel stützt oder veranschaulicht zwar etwas, aber eigentlich wird etwas über das gegebene Beispiel erzählt. Diese literarische Konstruktion die von der alltäglichen abweicht ist die Kategorie 1a. Ein Beispiel für solch ein Beispiel wäre: “Es gibt viele einsamen Menschen in München, zum Beispiel Lena. Für Lena wird sich heute jedoch einiges ändern…” Hier ist davon auszugehen, dass im folgenden etwas über Lena erzählt wird und es weniger relevant ist Lena als Beispiel für einsame Menschen in München zu verwenden. Aber Achtung – es besteht Verwechslungsgefahr mit Kategorie 2b und 3b! Sollte die Erzählung tatsächlich dazu dienen ein Beispiel für etwas zu sein (zur Veranschaulichung oder Argumentativ), handelt es sich um die Kategorien 2b oder 3b und nicht um 1a
+
+1b) Narrativ rhetorisches Beispiel: Wie 1a, jedoch wird das Beispiel vom Erzähler in einer Weise verwendet, die den Leser verwirren soll. Der Erzähler täuscht vor ein Beispiel geben zu wollen, obwohl er eigentlich etwas erzählt (nämlich zum Beispiel dass das im Beispiel geschilderte nun tatsächlich zutrifft. Ein Beispiel für solch ein Beispiel wäre: “Die Situation war so unangenehm wie zum Beispiel eine gelbe Blume zu Pflücken. Es war Paul unangenehm, er hatte jene gelbe Blume am Stadtrand gepflückt”. Hier wird zunächst vorgetäuscht das Pflücken ist nur ein Beispiel für eine unangenehme Situation. Aber dann wird klar dass die Situation eben unangenehm ist weil die Blume tatsächlich gepflückt wurde.  
+
+2a) Alltägliche Beispielverwendung zum Illustrieren, Veranschaulichen oder Konkretisieren. Es ist  kein fiktives Beispiel (sonst wäre es eines der Kategorie 4) und kein narrativer Einschub (sonst wäre es 2b). Es muss also kein narratives Element sein. 
+2b) Wie 2a) jedoch verbunden mit einem längeren narrativen Einschub. Beispiel: “Petra fühlte sich schlecht, so wie sie sich zum Beispiel fühlte, als sie ihre Heimat verlassen musste – damals, als sie nur das nötigste packen konnte. Es war Krieg. Nun war es ähnlich, wenn auch unter anderen Umständen”. Aber beachte: “Petra fühlte sich oft schlecht, so wie sich zum Beispiel ein Philosoph fühlt dem die Wahrheit versagt bleibt. Nun war es ähnlich, wenn auch unter anderen Umständen” ist kein narrativer Einschub! Denn hier wird im Beispiel nicht wirklich etwas erzählt. 
+
+3a) Belegbeispiel um eine Aussage oder These zu stützen oder zu Belegen. Sehr ähnlich zu Kategorie 2a). Jedoch wird es vom Erzähler spezifisch als Beweis oder Stütze für eine Aussge eingeführt und weniger zur Veranschaulichung.Es ist entweder kein fiktives Belegbeispiel oder kein narrativer Einschub. Beispiel: “Petra fühlte sich wohl schlecht, sie zitterte ja zum Beispiel am ganzen Körper,” Es muss dabei kein narratives Element sein. Es darf auch kein narrativer Einschub sein (sonst wäre es 3b). 
+3b) Belegbeispiel wie 3a) mit einem narrativen Einschub. Beispiel: “Jasmin war in der Welt der Zahlen zuhause. Letztes Jahr hat sie sich zum Beispiel mit der Riemannschen Vermutung auseinandergesetzt. Dies fesselte sie zunächst, bereitete ihr aber auch einige Kopfschmerzen und ihre Freunde wollte sie oft gar nicht mehr sehen. Nun ging sie wandern”
+
+4a) Beispiel für ein hypothetischen Sachverhalt ohne die Behauptung, dass er in der Vergangenheit eingetreten hätte können oder in der Zukunft eintreten könnte. Gedankenexperiment, das (wie Kategorie 2) etwas veranschaulicht, illustriert oder konkretisiert. 
+4b) Beispiel für ein hypothetischen Sachverhalt ohne die Behauptung, dass er in der Vergangenheit eingetreten hätte können oder in der Zukunft eintreten könnte. Gedankenexperiment, das (wie Kategorie 3) ein Argument oder eine These stützt. 
+4c) Beispiel für einen hypothetischen, möglichen Sachverhalt in der Zukunft.
+4d) Beispiel für einen hypothetischen alternativen Handlungsverlauf in der Vergangenheit.  
+4e) Beispiel für eine alternative Situation oder Handlung im aktuellen Augenblick. 
+
+5) Beispiel in Verbindung mit einem klassischen Modalverb wie dürfen, können, mögen, müssen, sollen und wollen etc. Beispiel: “So sollte er zum Beispiel endlich mit den Hausaufgaben fertig werden.”. Achtung, der Satz “Er hatte viele Pflichten, so sollte er zum Beispiel immer pünktlich sein” würde in Kategorie 3 fallen, da es ein Belegbeispiel ist.
+
+6) Andere außergewöhnliche Verwendung: Keine der obigen Kategorien trifft zu.
+
+Schreibe zunächst was das Beispiel ist und wofür im Format: “Beispiel…, Beispiel für:…” Schreibe dann den Essay. 
+Schreibe nach dem Essay einige Hypothesen mit pro und contra Argumenten auf welche Kategorie zutreffen könnte. Ziehe dann die Schlussfolgerung. Wenn Du denkst es ist ein narrativer Einschub betrachte noch einmal die Definition des narrativen Einschubs. Handelt es sich bei dem, was als Beispiel dient wirklich um eine kleine Erzählung? Wenn Du Denkst es wäre ein Beispiel der Kategorie 3 überlege ob wirklich argumentiert wird. 
+
+Wenn Du denkst es ist ein narrativer Einschub (also entweder 2b oder 3b) stelle immer (!) folgende Fragen und beantworte sie: kommt im Beispiel eine Handlung vor? Ist das was im Beispiel vorkommt eine Erzählung? Sollte eines davon nicht der Fall sein wechsle von Kategorie 2b zu 2a und von 3b zu 3a. 
+Die Kategoriesierung ist nicht immer Eindeutig. Schreibe deshalb am Schluss mindestens zwei oder mehr mögliche Kategorien auf, sortiert nach Wahrscheinlichkeit im Format 
+“*** Wahrscheinlichste Kategorie: 8a
+ *** Zweit wahrscheinlichste Kategorie: 8b” 
+
+### assistant
+
+response:: 3a
+
+prediction:Beispiel: "Wenn irgendetwas gebraucht wurde – zum Beispiel ein neuer Satz Kochtöpfe für eins der Häuser oder ein Paar Schuhe für ein Kind, dessen eigene Schuhe völlig verschlissen waren –, fand sie stets einen Spender, der überredet werden konnte, die nötigen Geldmittel zur Verfügung zu stellen."
+Beispiel für: Die Fähigkeit von Mma Potokwani, Spendengelder für die Waisenfarm zu beschaffen.
+
+### Essay
+
+In dem vorliegenden Textausschnitt wird die Figur Mma Potokwani und ihre Vision von einem Buch über die Leitung einer Waisenfarm vorgestellt. Das Beispiel, das sie anführt, illustriert ihre Kompetenz in der Beschaffung von Spendengeldern. Es dient dazu, ihre Fähigkeit zu konkretisieren, für spezifische Bedürfnisse der Waisenfarm Spender zu finden und zu überzeugen.
+
+Die Verwendung des Beispiels in diesem Kontext ist vielschichtig. Es veranschaulicht nicht nur die praktische Fähigkeit von Mma Potokwani, sondern vermittelt auch einen tieferen Einblick in ihre Persönlichkeit und ihre Überzeugungskraft. Das Beispiel ist somit nicht nur ein illustratives Element, sondern trägt auch zur Charakterisierung der Figur bei und unterstützt die narrative Entwicklung der Geschichte.
+
+Die literaturwissenschaftliche Analyse solcher Beispiele kann aufzeigen, wie Autoren konkrete Situationen nutzen, um abstrakte Qualitäten ihrer Charaktere zu verdeutlichen. In diesem Fall wird die abstrakte Fähigkeit, Spendengelder zu akquirieren, durch das konkrete Beispiel des Bedarfs an Kochtöpfen und Schuhen greifbar gemacht. Dieses Vorgehen ermöglicht es dem Leser, die Handlungsfähigkeit der Figur besser zu verstehen und eine emotionale Verbindung aufzubauen.
+
+### Hypothesen und Kategorisierung
+
+Pro Kategorie 2a: Das Beispiel dient dazu, die Fähigkeit von Mma Potokwani zu illustrieren, und es ist kein fiktives Beispiel. Es ist auch kein narrativer Einschub, da es keine eigenständige Handlung oder Erzählung darstellt.
+
+Contra Kategorie 2b: Es liegt kein narrativer Einschub vor, da das Beispiel nicht in eine längere, in sich abgeschlossene Erzählung eingebettet ist.
+
+Pro Kategorie 3a: Das Beispiel könnte auch als Beleg für die These dienen, dass Mma Potokwani eine hohe Kompetenz in der Beschaffung von Spendengeldern hat.
+
+Contra Kategorie 3b: Es fehlt ein narrativer Einschub, der eine Handlung oder Erzählung beinhaltet.
+
+Pro Kategorie 6: Das Beispiel könnte auch als eine andere außergewöhnliche Verwendung interpretiert werden, da es sowohl illustrativ als auch charakterisierend wirkt.
+
+### Schlussfolgerung
+
+*** Wahrscheinlichste Kategorie: 2a
+*** Zweit wahrscheinlichste Kategorie: 3a
+*** Dritt wahrscheinlichste Kategorie: 6
+
+Das Beispiel dient primär der Illustration und Konkretisierung der Fähigkeit von Mma Potokwani, Spendengelder zu beschaffen, und ist somit am ehesten der Kategorie 2a zuzuordnen. Es könnte auch als Belegbeispiel für ihre Kompetenz in dieser Hinsicht gesehen werden (Kategorie 3a), wobei es jedoch keinen narrativen Einschub darstellt. Da das Beispiel auch zur Charakterisierung beiträgt, könnte es auch als eine andere außergewöhnliche Verwendung (Kategorie 6) betrachtet werden.
+
+# Task: categories_annotation_eval Score: {'classification_1': 0, 'classification_2': 0, ': 4c_1': 0, ': 4c_2': 0, 'classification_num_1': 1, 'classification_num_2': 1, '4e_num_1': 1, '4e_num_2': 1}
+
+instruction:A helpful assistant, who is an expert in the fields of philosophy and literary studies, takes questions and tasks from a human. The assistant provides responses that appropriately complete the request in the same language that the human used. 
+
+: 
+Im folgenden Textausschnitt wird ein Beispiel gegeben das durch “zum Beispiel” gekennzeichnet wurde. Was ist dieses Beispiel und wofür ist es ein Beispiel? (zitiere nah am Text, möglichst wörtlich). Schreibe einen literaturwissenschaftlichen Essay über die Verwendung des Beispiels in diesem Textausschnitt. 
+
+r hübschen Frauen nicht hinterherschaut, muss erst noch geboren werden. Es hat nichts zu sagen.«       Todds Reaktion ist:         sicher         unsicher       Er wendet die folgenden unsicheren Taktiken an:           So hätte er sicher reagiert:           Emmas Reaktion ist:         sicher         unsicher       Sie wendet die folgenden unsicheren Taktiken an:           So hätte sie sicher reagiert:          Antwort: Todd   unsicher. Todd weicht Emmas eigentlicher Sorge aus   sie fühlt sich unattraktiv und unbeachtet, wenn er anderen Frauen hinterherschaut. Stattdessen macht er dicht, was das Gegenteil von Interesse ist. Erst hat er »keine Ahnung«, wovon sie spricht, und später bagatellisiert er die Bedeutung ihrer Meinung durch die Bemerkung, sein Verhalten sei für Männer normal. Das ist unklare Kommunikation in Reinkultur. Nichts wird gelöst. Sie ärgert sich weiter über sein Verhalten, und er fühlt sich berechtigt, es selbstherrlich fortzusetzen.      Todd hätte die folgenden sicheren Taktiken anwenden können: Er hätte sich für Emmas Wohl interessieren und sagen können, dass er versteht, dass sie sich unwohl fühlen muss, wenn er ein Auge auf andere Frauen wirft. Er könnte auch versuchen zu verstehen, was sie an seinem Verhalten wirklich stört, und ihr versichern, dass er sie wunderschön findet (damit bliebe er bei dem aktuellen Problem). Er könnte sie bitten, ihn darauf hinzuweisen, wenn er wieder in dieses Muster verfällt, damit er anfangen kann, es zu ändern. Er könnte zum Beispiel sagen: »Es tut mir leid. Es ist so eine Gewohnheit, aber wenn du es mir so sagst, wird mir klar, dass es verletzend und respektlos ist. Ich rege mich ja auch auf, wenn andere Männer dir hinterhersehen, auch wenn du das nicht merkst! Ich will versuchen, respektvoller zu sein, aber wenn ich es vergesse, dann erinnere mich bitte daran.«      Antwort: Emma   sicher. Emma teilt ihre Bedürfnisse effizient mit. Sie sagt Todd so offen und so wenig vorwurfsvoll wie möglich, wie sie sich bei seinem Verhalten fühlt.      Emma hätte die folgenden sicheren Taktiken anwenden können: Emma hat ihre Sache gut gemacht.       .  Dan und Shannon brauchen dringend ein bisschen Zeit füreinander und gehen aus. Dans Schwester kümmert sich währenddessen um die Kinder. Als Dan und Shannon nach Hause zurückkommen, geht Shannon direkt ins Bett, während Dan sich noch mit seiner Schwester unterhält. Als Dan später ins Schlafzimmer kommt, ist er auf hundertachtzig. »Meine Schwester tut uns einen riesigen Gefallen mit dem Babysitting, du hättest ihr wenigstens Gute Nacht wünschen können!« Shannon erwidert: »Hab ich ihr wirklich noch nicht einmal ›Gute Nacht‹ gesagt? Ich bin total benebelt. Ich hab s nicht so gemeint. Es tut mir leid.«       Shannons Reaktion ist:         sicher         unsicher       Sie wendet die folgenden unsicheren Taktiken an:           So hätte sie sicher reagiert:          Antwort: sicher. Shannon geht vielen unsicheren Gefahren aus dem Weg. Sie verallgemeinert nicht. Sie reagiert n
+
+Entscheide nachdem du den Essay geschrieben hast basierend auf diesem Essay, in welche der folgenden Kategorien Du das Beispiel einordnen würdest:
+
+Definition narrativer Einschub:  Ein narrativer Einschub ist eine kurze, in sich abgeschlossene Erzählung innerhalb einer größeren Geschichte. Diese Erzählung unterscheidet sich durch eigene Charaktere, eine eigenständige Handlung und einen spezifischen Kontext von der Haupterzählung. Sie trägt zur Gesamterzählung bei, indem sie zusätzliche Themen oder Ideen einführt, besitzt jedoch auch einen eigenständigen narrativen Wert. Der Einschub sollte klar von der Haupterzählung abgegrenzt sein, etwa durch einen Wechsel im Erzählstil oder einen deutlich anderen Erzählkontext. Nichts sonst ist ein narrativer Einschub. 
+
+Kategorien: 
+
+1a) Narratives Beispiel: Im alltäglichen Gebrauch dient ein Beispiel dazu etwas zu veranschaulichen oder um ein Argument bzw. eine These zu stützen. Doch der Literatur gibt es auch Konstruktionen, in welchen das Beispiel in die andere Richtung funktioniert. Das Beispiel stützt oder veranschaulicht zwar etwas, aber eigentlich wird etwas über das gegebene Beispiel erzählt. Diese literarische Konstruktion die von der alltäglichen abweicht ist die Kategorie 1a. Ein Beispiel für solch ein Beispiel wäre: “Es gibt viele einsamen Menschen in München, zum Beispiel Lena. Für Lena wird sich heute jedoch einiges ändern…” Hier ist davon auszugehen, dass im folgenden etwas über Lena erzählt wird und es weniger relevant ist Lena als Beispiel für einsame Menschen in München zu verwenden. Aber Achtung – es besteht Verwechslungsgefahr mit Kategorie 2b und 3b! Sollte die Erzählung tatsächlich dazu dienen ein Beispiel für etwas zu sein (zur Veranschaulichung oder Argumentativ), handelt es sich um die Kategorien 2b oder 3b und nicht um 1a
+
+1b) Narrativ rhetorisches Beispiel: Wie 1a, jedoch wird das Beispiel vom Erzähler in einer Weise verwendet, die den Leser verwirren soll. Der Erzähler täuscht vor ein Beispiel geben zu wollen, obwohl er eigentlich etwas erzählt (nämlich zum Beispiel dass das im Beispiel geschilderte nun tatsächlich zutrifft. Ein Beispiel für solch ein Beispiel wäre: “Die Situation war so unangenehm wie zum Beispiel eine gelbe Blume zu Pflücken. Es war Paul unangenehm, er hatte jene gelbe Blume am Stadtrand gepflückt”. Hier wird zunächst vorgetäuscht das Pflücken ist nur ein Beispiel für eine unangenehme Situation. Aber dann wird klar dass die Situation eben unangenehm ist weil die Blume tatsächlich gepflückt wurde.  
+
+2a) Alltägliche Beispielverwendung zum Illustrieren, Veranschaulichen oder Konkretisieren. Es ist  kein fiktives Beispiel (sonst wäre es eines der Kategorie 4) und kein narrativer Einschub (sonst wäre es 2b). Es muss also kein narratives Element sein. 
+2b) Wie 2a) jedoch verbunden mit einem längeren narrativen Einschub. Beispiel: “Petra fühlte sich schlecht, so wie sie sich zum Beispiel fühlte, als sie ihre Heimat verlassen musste – damals, als sie nur das nötigste packen konnte. Es war Krieg. Nun war es ähnlich, wenn auch unter anderen Umständen”. Aber beachte: “Petra fühlte sich oft schlecht, so wie sich zum Beispiel ein Philosoph fühlt dem die Wahrheit versagt bleibt. Nun war es ähnlich, wenn auch unter anderen Umständen” ist kein narrativer Einschub! Denn hier wird im Beispiel nicht wirklich etwas erzählt. 
+
+3a) Belegbeispiel um eine Aussage oder These zu stützen oder zu Belegen. Sehr ähnlich zu Kategorie 2a). Jedoch wird es vom Erzähler spezifisch als Beweis oder Stütze für eine Aussge eingeführt und weniger zur Veranschaulichung.Es ist entweder kein fiktives Belegbeispiel oder kein narrativer Einschub. Beispiel: “Petra fühlte sich wohl schlecht, sie zitterte ja zum Beispiel am ganzen Körper,” Es muss dabei kein narratives Element sein. Es darf auch kein narrativer Einschub sein (sonst wäre es 3b). 
+3b) Belegbeispiel wie 3a) mit einem narrativen Einschub. Beispiel: “Jasmin war in der Welt der Zahlen zuhause. Letztes Jahr hat sie sich zum Beispiel mit der Riemannschen Vermutung auseinandergesetzt. Dies fesselte sie zunächst, bereitete ihr aber auch einige Kopfschmerzen und ihre Freunde wollte sie oft gar nicht mehr sehen. Nun ging sie wandern”
+
+4a) Beispiel für ein hypothetischen Sachverhalt ohne die Behauptung, dass er in der Vergangenheit eingetreten hätte können oder in der Zukunft eintreten könnte. Gedankenexperiment, das (wie Kategorie 2) etwas veranschaulicht, illustriert oder konkretisiert. 
+4b) Beispiel für ein hypothetischen Sachverhalt ohne die Behauptung, dass er in der Vergangenheit eingetreten hätte können oder in der Zukunft eintreten könnte. Gedankenexperiment, das (wie Kategorie 3) ein Argument oder eine These stützt. 
+4c) Beispiel für einen hypothetischen, möglichen Sachverhalt in der Zukunft.
+4d) Beispiel für einen hypothetischen alternativen Handlungsverlauf in der Vergangenheit.  
+4e) Beispiel für eine alternative Situation oder Handlung im aktuellen Augenblick. 
+
+5) Beispiel in Verbindung mit einem klassischen Modalverb wie dürfen, können, mögen, müssen, sollen und wollen etc. Beispiel: “So sollte er zum Beispiel endlich mit den Hausaufgaben fertig werden.”. Achtung, der Satz “Er hatte viele Pflichten, so sollte er zum Beispiel immer pünktlich sein” würde in Kategorie 3 fallen, da es ein Belegbeispiel ist.
+
+6) Andere außergewöhnliche Verwendung: Keine der obigen Kategorien trifft zu.
+
+Schreibe zunächst was das Beispiel ist und wofür im Format: “Beispiel…, Beispiel für:…” Schreibe dann den Essay. 
+Schreibe nach dem Essay einige Hypothesen mit pro und contra Argumenten auf welche Kategorie zutreffen könnte. Ziehe dann die Schlussfolgerung. Wenn Du denkst es ist ein narrativer Einschub betrachte noch einmal die Definition des narrativen Einschubs. Handelt es sich bei dem, was als Beispiel dient wirklich um eine kleine Erzählung? Wenn Du Denkst es wäre ein Beispiel der Kategorie 3 überlege ob wirklich argumentiert wird. 
+
+Wenn Du denkst es ist ein narrativer Einschub (also entweder 2b oder 3b) stelle immer (!) folgende Fragen und beantworte sie: kommt im Beispiel eine Handlung vor? Ist das was im Beispiel vorkommt eine Erzählung? Sollte eines davon nicht der Fall sein wechsle von Kategorie 2b zu 2a und von 3b zu 3a. 
+Die Kategoriesierung ist nicht immer Eindeutig. Schreibe deshalb am Schluss mindestens zwei oder mehr mögliche Kategorien auf, sortiert nach Wahrscheinlichkeit im Format 
+“*** Wahrscheinlichste Kategorie: 8a
+ *** Zweit wahrscheinlichste Kategorie: 8b” 
+
+### assistant
+
+response:: 4c
+
+prediction:Beispiel: "Er könnte zum Beispiel sagen: »Es tut mir leid. Es ist so eine Gewohnheit, aber wenn du es mir so sagst, wird mir klar, dass es verletzend und respektlos ist. Ich rege mich ja auch auf, wenn andere Männer dir hinterhersehen, auch wenn du das nicht merkst! Ich will versuchen, respektvoller zu sein, aber wenn ich es vergesse, dann erinnere mich bitte daran.«", Beispiel für: eine alternative Reaktion Todds auf Emmas Gefühle und Bedürfnisse.
+
+Essay:
+In dem vorliegenden Textausschnitt wird ein Beispiel verwendet, um eine alternative Reaktion Todds auf die Gefühle und Bedürfnisse von Emma zu illustrieren. Todd könnte auf eine Weise reagieren, die Empathie und Verständnis für Emmas Situation zeigt, anstatt ihre Sorgen zu bagatellisieren. Das Beispiel dient hier als Kontrast zu Todds tatsächlichem Verhalten und zeigt auf, wie eine konstruktive Kommunikation aussehen könnte.
+
+Die Verwendung des Beispiels in diesem Kontext ist vielschichtig. Einerseits dient es dazu, die Diskrepanz zwischen Todds tatsächlichem Verhalten und einer wünschenswerten Reaktion zu verdeutlichen. Andererseits bietet es dem Leser eine Vorstellung davon, wie eine positive Verhaltensänderung aussehen könnte. Das Beispiel hat somit eine didaktische Funktion, indem es aufzeigt, wie durch Achtsamkeit und Respekt in der Partnerschaft Konflikte gelöst werden können.
+
+Die literaturwissenschaftliche Analyse zeigt, dass das Beispiel nicht nur als rhetorisches Mittel dient, sondern auch eine narrative Dimension aufweist. Es wird eine hypothetische Situation geschaffen, in der Todd eine empathische Antwort gibt, die auf Verständnis und Respekt basiert. Diese hypothetische Situation ist in sich geschlossen und bildet einen Kontrast zur tatsächlichen Handlung, was es zu einem narrativen Einschub macht.
+
+Hypothesen zur Kategorisierung:
+Pro Kategorie 4e: Das Beispiel stellt eine alternative Handlung im aktuellen Augenblick dar und zeigt, wie Todd hätte reagieren können.
+Contra Kategorie 4e: Es wird keine Behauptung aufgestellt, dass diese Handlung in der Vergangenheit hätte eintreten können oder in der Zukunft eintreten könnte.
+
+Pro Kategorie 2b: Das Beispiel ist mit einem narrativen Einschub verbunden, der eine hypothetische Handlung illustriert.
+Contra Kategorie 2b: Das Beispiel dient nicht primär der Illustration, sondern der Darstellung einer alternativen Handlungsmöglichkeit.
+
+Pro Kategorie 3b: Das Beispiel könnte als Beleg für die These dienen, dass eine empathische und respektvolle Kommunikation in der Partnerschaft möglich ist.
+Contra Kategorie 3b: Das Beispiel wird nicht explizit als Beleg für eine These eingeführt, sondern als hypothetische Alternative.
+
+Schlussfolgerung:
+Das Beispiel enthält eine Handlung und stellt eine Erzählung dar, die eine alternative Reaktion in der aktuellen Situation aufzeigt. Es ist jedoch kein Beleg für eine These, sondern eine hypothetische Illustration einer besseren Kommunikation.
+
+*** Wahrscheinlichste Kategorie: 4e
+*** Zweit wahrscheinlichste Kategorie: 2b
+

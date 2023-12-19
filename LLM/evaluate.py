@@ -97,6 +97,7 @@ class Evaluate():
 
     def predict_responses(self, ds: Dict[str, Any], name: str) -> None:
 
+        print('start prediction')
         ds = ds['text']
 
         for sample in tqdm(ds[:self.samples_per_ds]):
@@ -130,8 +131,13 @@ class Evaluate():
             self.eval_dict['score'].append('-')
 
     def save_eval_dict(self, fname):
-        with open(fname, 'wb') as file:
+        with open(fname+'.pkl', 'wb') as file:
             pickle.dump(self.eval_dict, file)
+
+    def load_eval_dict(self, fname):
+        with open(fname+'.pkl', 'rb') as file:
+            self.eval_dict = pickle.load(file)
+
 
     def process_eval_files(self, folder: str) -> None:
 
@@ -331,12 +337,13 @@ def evaluate_examples_elastic(response: str, prediction: str, sentence_model: Se
 def extract_category(text, valid_categories):
     # Create a regex pattern to match any of the valid categories
     pattern = r'\b(' + '|'.join(re.escape(category) for category in valid_categories) + r')\b'
+
     
-    # Search for the pattern in the text
-    match = re.search(pattern, text)
+    # Find all occurrences of the pattern in the text
+    matches = re.findall(pattern, text)
     
-    # Return the found category or None if no match is found
-    return match.group(0) if match else None
+    # Return the list of found categories
+    return matches
 
 def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, str], Dict[str, float]]:
 
@@ -345,20 +352,21 @@ def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, 
     scores = {}
 
     response = response.split('kategorie:')[-1]
+    responses = extract_category(response,valid)
 
     prediction = prediction.split('***')
     try:
         prediction_1 = prediction[1]
-        prediction_1 = extract_category(prediction_1,valid)
+        prediction_1 = extract_category(prediction_1,valid)[0]
     except:
         prediction_1 = 'z'
 
     try:
         prediction_2 = prediction[2].strip()
         if prediction_2:
-            prediction_2 = extract_category(prediction_2,valid)
+            prediction_2 = extract_category(prediction_2,valid)[0]
         else:
-            prediction_2 = extract_category(prediction[3],valid)
+            prediction_2 = extract_category(prediction[3],valid)[0]
     except: 
         prediction_2 = 'z'
 
@@ -370,26 +378,27 @@ def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, 
         prediction_2_number = re.findall(r'\d+', prediction_2)[0]
     except: 
         pass
-    if prediction_1 in response: 
+
+    if prediction_1 in responses: 
         scores['classification_1'] = 1
         scores['classification_2'] = 1
         scores[prediction_1 + '_1'] = 1
         scores[prediction_1 + '_2'] = 1
         confusion_matrix = (prediction_1,prediction_1)
     
-    elif prediction_2 in response:
+    elif prediction_2 in responses:
         scores['classification_1'] = 0
         scores['classification_2'] = 1
         scores[prediction_2 + '_1'] = 0
         scores[prediction_2 + '_2'] = 1
-        confusion_matrix = (prediction_1,response.split(',')[0])
+        confusion_matrix = (prediction_1,responses[0])
 
     else: 
         scores['classification_1'] = 0
         scores['classification_2'] = 0
         scores[response.split(',')[0] + '_1'] = 0
         scores[response.split(',')[0] + '_2'] = 0
-        confusion_matrix = (prediction_1,response.split(',')[0])   
+        confusion_matrix = (prediction_1,responses[0])   
 
 
     if prediction_1_number in response: 
@@ -397,7 +406,7 @@ def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, 
         scores['classification_num_2'] = 1
         scores[prediction_1 + '_num_1'] = 1
         scores[prediction_1 + '_num_2'] = 1    
-        
+
     elif prediction_2_number in response:
         scores['classification_num_1'] = 0
         scores['classification_num_2'] = 1
@@ -703,24 +712,31 @@ if __name__ == "__main__":
     "--eval_dir", 
     type=str,
     #default='data/train_test_datasets/eval/eval',  
-    default='data/train_test_datasets/eval_categories', 
-    #default='data/train_test_datasets/eval_synth'
+    #default='data/train_test_datasets/eval_categories', 
+    default='data/train_test_datasets/eval_synth'
     )
     CLI.add_argument(
     "--models",  
     nargs="*", 
     type=str,
-    #default=['./results/DettmersAll7b64/final_merged_checkpoint'],  # default if nothing is provided
-    default = ['gpt-4']
+    default=['./results/DettmersAll7b64/checkpoint-7000-merged'],  # default if nothing is provided
+    #default = ['gpt-4']
     )
 
     CLI.add_argument(
     "--samples", 
     type=int,
-    default='2',  
+    default='400',  
     )
     args = CLI.parse_args()
     
+    CLI.add_argument(
+    "--loadDict", 
+    type=str,
+    default = ''
+    #default='evaluation/evaluation_dictgpt-4_533',  
+    )
+    args = CLI.parse_args()
 
     eval_folder = args.eval_dir #'data/train_test_datasets/run_1_Cheung/eval'
 
@@ -762,10 +778,12 @@ if __name__ == "__main__":
         eval = Evaluate(model,samples_per_ds=samples)
 
         
-
-        eval.process_eval_files(eval_folder)
-        
-        eval.save_eval_dict('evaluation_dict'+model_name+'_'+suffix)
+        if args.loadDict:
+            eval.load_eval_dict(args.loadDict)
+        else:
+            eval.process_eval_files(eval_folder)
+            
+            eval.save_eval_dict('evaluation/evaluation_dict'+model_name+'_'+suffix)
         
         eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds_clean':evaluate_examples_sent,'bsp_ds_simple_eval_clean':evaluate_examples_sent,
                                    'categories_annotation_eval':evaluate_classification,'gpt4_annotated_examples_eval':evaluate_examples_sent})
@@ -774,7 +792,7 @@ if __name__ == "__main__":
 
         if eval.confusion_matrices:
             eval.calc_confusion_matrix()
-            write_confusion_matrices_to_file(eval.confusion_matrices,model_name+'_confusion.txt')
+            write_confusion_matrices_to_file(eval.confusion_matrices,model_name+'_'+suffix+'_confusion.txt')
 
         eval.create_score_statistics()
 

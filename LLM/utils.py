@@ -94,7 +94,7 @@ def calculate_confusion_matrix(tuples):
     # Normalize the matrix to show proportions
     total_instances = sum(sum(row.values()) for row in matrix.values())
     if total_instances > 0:
-        df_matrix = df_matrix / total_instances
+        df_matrix = df_matrix #/ total_instances
 
     # Ensure all predictions and ground truths are represented
     all_labels = set([pred for pred, _ in tuples]) | set([gt for _, gt in tuples])
