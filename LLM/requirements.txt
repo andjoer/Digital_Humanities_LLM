@@ -14,4 +14,4 @@ transformers
 einops
 bs4
 openai
-flash-attn
+

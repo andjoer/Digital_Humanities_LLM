@@ -103,7 +103,7 @@ def main(model_name='DettmersAll7b64',metric_name='bsp_ds',do_evaluation = True,
         eval_folder= environ.get('EVAL_DIR')
         print('updated eval_dir from ENV: '+str(eval_folder))
     if  environ.get('OUT_MODEL') is not None:    
-        model_name = [environ.get('OUT_MODEL')]
+        model_name = environ.get('OUT_MODEL')
         print('updated models from ENV: '+str(model_name))
     if  environ.get('EVAL_SAMPLES') is not None:    
         samples = int(environ.get('EVAL_SAMPLES'))

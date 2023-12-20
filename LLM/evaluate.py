@@ -302,7 +302,7 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
                 scores[key] = get_semantic_distance(prediction, response_dict[key], sentence_model)
             if 'in_gedankengang' in key.lower():
                 scores[key] = int(prediction == response_dict[key])
-                confusion['gedankengang'] = (prediction, response_dict[key])
+                confusion['gedankengang'] = (prediction.lower(), response_dict[key].lower())
             else: 
                 scores[key] = calc_common_labels_score(prediction, response_dict[key])
 
@@ -538,7 +538,7 @@ def evaluate_arguments(response: str, prediction: str) -> Dict[str, int]:
     Returns:
         dict: Dictionary of scores.
     """
-
+    valid = ['majorclaim', 'backing', 'premise', 'claim']
     response_label_dict = preprocess_labeled_list(response)
     prediction_label_dict = preprocess_labeled_list(prediction)
 
