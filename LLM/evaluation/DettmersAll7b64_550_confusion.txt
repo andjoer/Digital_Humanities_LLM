@@ -1,0 +1,15 @@
+erzählposition
+           personal  auktorial
+personal          0         27
+auktorial         4         24
+
+wiedergabeform
+              erzählstimme  figurenrede
+erzählstimme            40            0
+figurenrede             15            0
+
+gedankengang
+      Nein  Ja
+Nein    47   0
+Ja       7   1
+

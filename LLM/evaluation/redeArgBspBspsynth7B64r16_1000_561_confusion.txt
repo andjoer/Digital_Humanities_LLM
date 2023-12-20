@@ -1,0 +1,38 @@
+bsp_ds_clean_erzählposition
+          personal
+personal         1
+
+bsp_ds_clean_wiedergabeform
+              erzählstimme
+erzählstimme             1
+
+bsp_ds_clean_gedankengang
+      Nein
+Nein     1
+
+redewiedergabe
+                      redewiedergabe  keine redewiedergabe
+redewiedergabe                     0                     0
+keine redewiedergabe               2                     2
+
+arguments
+              majorclaim   premise  false   claim
+ majorclaim            0         0      0       0
+ premise               0         0      0       1
+false                  0         0      1       0
+ claim                 1         0      0       1
+
+gpt4_annotated_examples_eval_erzählposition
+           personal  auktorial
+personal          0          0
+auktorial         2          2
+
+gpt4_annotated_examples_eval_wiedergabeform
+              figurenrede  erzählstimme
+figurenrede             0             1
+erzählstimme            1             2
+
+gpt4_annotated_examples_eval_gedankengang
+      Nein
+Nein     4
+

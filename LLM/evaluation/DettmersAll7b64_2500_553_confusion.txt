@@ -1,0 +1,6 @@
+arguments
+           o   premise   claim
+ o         0         0       0
+ premise   0         0       1
+ claim     1         0       0
+

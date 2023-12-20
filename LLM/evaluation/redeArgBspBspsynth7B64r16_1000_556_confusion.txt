@@ -1,0 +1,21 @@
+arguments
+                                                    7) wenn die fehler unserer vorgänger uns ein indirekter weg zu den zielen sind, können uns die leistungen anderer als direkter weg dienen   claim   premise   majorclaim
+7) wenn die fehler unserer vorgänger uns ein in...                                                  0                                                                                               0         0            0
+ claim                                                                                              1                                                                                               1         0            1
+ premise                                                                                            0                                                                                               1         0            0
+ majorclaim                                                                                         0                                                                                               0         0            0
+
+erzählposition
+           auktorial  personal
+auktorial          2         2
+personal           0         0
+
+wiedergabeform
+              erzählstimme  figurenrede
+erzählstimme             2            1
+figurenrede              1            0
+
+gedankengang
+      Nein
+Nein     4
+

@@ -1,0 +1,26 @@
+redewiedergabe
+                      redewiedergabe  keine redewiedergabe
+redewiedergabe                     0                     0
+keine redewiedergabe               2                     2
+
+arguments
+                                                     premise   majorclaim   claim  7) wenn die fehler unserer vorgänger uns ein indirekter weg zu den zielen sind, können uns die leistungen anderer als direkter weg dienen
+ premise                                                   0            0       1                                                  0                                                                                        
+ majorclaim                                                0            0       0                                                  0                                                                                        
+ claim                                                     0            1       1                                                  1                                                                                        
+7) wenn die fehler unserer vorgänger uns ein in...         0            0       0                                                  0                                                                                        
+
+erzählposition
+           personal  auktorial
+personal          0          0
+auktorial         2          2
+
+wiedergabeform
+              erzählstimme  figurenrede
+erzählstimme             2            1
+figurenrede              1            0
+
+gedankengang
+      Nein
+Nein     4
+

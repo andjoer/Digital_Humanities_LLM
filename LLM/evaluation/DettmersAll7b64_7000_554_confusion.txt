@@ -1,0 +1,6 @@
+arguments
+              premise   majorclaim   claim
+ premise            0            0       1
+ majorclaim         0            0       0
+ claim              1            1       1
+

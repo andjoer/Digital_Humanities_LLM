@@ -159,14 +159,18 @@ class Evaluate():
 
                     if not isinstance(evaluation, tuple):
                         self.eval_dict['score'][idx] = evaluation
-
                     else:
-
                         self.eval_dict['score'][idx] = evaluation[1]
+                        if isinstance(evaluation[0], dict):
 
-                        if name not in self.confusion_matrices:
-                            self.confusion_matrices[name] = []
-                        self.confusion_matrices[name].append(evaluation[0])
+                            for key in evaluation[0].keys():
+                                if name+'_'+key not in self.confusion_matrices:
+                                    self.confusion_matrices[name+'_'+key] = []
+                                self.confusion_matrices[name+'_'+key].append(evaluation[0][key])    
+                        else:
+                            if name not in self.confusion_matrices:
+                                self.confusion_matrices[name] = []
+                            self.confusion_matrices[name].append(evaluation[0])
             except: 
                 print('failed evaluation')
 
@@ -178,7 +182,7 @@ class Evaluate():
     def create_score_statistics(self) -> None:
 
         score_df = pd.DataFrame.from_dict(self.eval_dict)
-        print(score_df.head())
+
 
         names = list(set(list(score_df['name'])))
 
@@ -190,8 +194,7 @@ class Evaluate():
             
             score_dict = {}
             for _ , row in name_df.iterrows():
-                print('###')
-                print(row['score'])
+
                 if isinstance(row['score'],dict):
                     for key in row['score'].keys():
                         
@@ -279,13 +282,16 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
     Returns:
         Union[Dict[str, float], int]: Dictionary of scores for each key in the response dictionary, or 0 if no valid python dict.
     """
+
     try: 
         response_dict = ast.literal_eval(response_dict)
         prediction_dict = ast.literal_eval(prediction_dict)
     except: 
+
         return 0
 
     scores: Dict[str, float] = {}
+    confusion = {}
     for key in response_dict.keys():
 
         prediction: str = prediction_dict.get(key)
@@ -294,26 +300,54 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
 
             if 'beispiel' in key.lower():
                 scores[key] = get_semantic_distance(prediction, response_dict[key], sentence_model)
+            if 'in_gedankengang' in key.lower():
+                scores[key] = int(prediction == response_dict[key])
+                confusion['gedankengang'] = (prediction, response_dict[key])
             else: 
                 scores[key] = calc_common_labels_score(prediction, response_dict[key])
 
             if key.lower() == 'wiedergabeform':
 
-                if (prediction.lower() == 'erzählstimme' and response_dict[key].lower() == 'erzählstimme') or (prediction.lower() != 'erzählstimme' and response_dict[key].lower() != 'erzählstimme'):
-                    scores['wiedergabe_binary'] = 1
-                else: 
-                    scores['wiedergabe_binary'] = 0
+                if 'erzählstimme' in prediction.lower():
+                    
+                    if 'erzählstimme' in response_dict[key].lower():  
+                        scores['wiedergabe_binary'] = 1
+                        confusion['wiedergabeform'] = ('erzählstimme','erzählstimme')
+                    else: 
+                        scores['wiedergabe_binary'] = 0
+                        confusion['wiedergabeform'] = ('erzählstimme','figurenrede')
+
+                else:
+                    if 'figurenrede' not in response_dict[key].lower():  
+                        scores['wiedergabe_binary'] = 1
+                        confusion['wiedergabeform'] = ('figurenrede','figurenrede')
+                    else: 
+                        scores['wiedergabe_binary'] = 0
+                        confusion['wiedergabeform'] = ('figurenrede','erzählstimme')
 
             if key.lower() == 'erzählposition':
 
-                if ('auktorial' in prediction.lower()  and  'auktorial' in response_dict[key].lower()) or ('personal' in prediction.lower()  and  'personal' in response_dict[key].lower()):
-                    scores['erzählposition_binary'] = 1
-                else: 
-                    scores['erzählposition_binary'] = 0
+                if 'auktorial' in prediction.lower():
+                    
+                    if 'auktorial' in response_dict[key].lower():  
+                        scores['erzählposition_binary'] = 1
+                        confusion['erzählposition'] = ('auktorial','auktorial')
+                    else: 
+                        scores['erzählposition_binary'] = 0
+                        confusion['erzählposition'] = ('auktorial','personal')
+
+                else:
+                    if 'personal' not in response_dict[key].lower():  
+                        scores['erzählposition_binary'] = 1
+                        confusion['erzählposition'] = ('personal','personal')
+                    else: 
+                        scores['erzählposition_binary'] = 0
+                        confusion['erzählposition'] = ('personal','auktorial')
 
         else: 
+
             scores[key] = 0
-    return scores
+    return (confusion, scores)
 
 
 def evaluate_examples_elastic(response: str, prediction: str, sentence_model: SentenceTransformer) -> Dict[str, float]:
@@ -441,12 +475,12 @@ def evaluate_examples(response: str, prediction: str, sentence_model: SentenceTr
 
     response_dict = extract_dict(response)
 
-    if response_dict:
+    if response_dict is not None:
         score = evaluate_examples_dict(response_dict, extract_dict(prediction),sentence_model)
 
     else: 
         score = evaluate_examples_elastic(response,prediction,sentence_model)
-    
+
     return score
 
 def extract_number(string: str) -> Optional[str]:
@@ -543,16 +577,18 @@ def evaluate_arguments(response: str, prediction: str) -> Dict[str, int]:
         score_binary_sum += score_binary
         score_sum += score
 
+    if len(response_label_dict[number]) < 18 and len(prediction_label_dict[number]) < 18:
+        confusion = (prediction_label_dict[number],response_label_dict[number])
+    else: 
+        confusion = ('false','false')
+
     divisor = len(response_label_dict.keys())
 
     if divisor != 0:
-        return {'score':score_sum/divisor, 'score binary':score_binary_sum/divisor}
+        return (confusion,{'score':score_sum/divisor, 'score binary':score_binary_sum/divisor})
     else: 
-        print('divisor 0')
-        print('response')
-        print(response)
-        print(prediction)
-        return {'score':0, 'score binary':0}
+
+        return (confusion,{'score':0, 'score binary':0})
     
 def evaluate_redewiedergabe(response: str, prediction: str) -> Dict[str, float]:
 
@@ -580,17 +616,20 @@ def evaluate_redewiedergabe(response: str, prediction: str) -> Dict[str, float]:
                 if response_label_dict[number].lower().strip() == 'keine redewiedergabe':
                     score_binary = 1
                     score = 1
+                    confusion = ('keine redewiedergabe', 'keine redewiedergabe')
                 else:
                     score_binary = 0
+                    confusion = ('redewiedergabe', 'keine redewiedergabe')
                     score = 0
 
             else: 
                 if response_label_dict[number].lower().strip() != 'keine redewiedergabe':
                     score_binary = 1
-
+                    confusion = ('redewiedergabe', 'redewiedergabe')
                     score = calc_common_labels_score(prediction_label_dict[number],response_label_dict[number])
 
                 else: 
+                    confusion = ('redewiedergabe', 'keine redewiedergabe')
                     score = 0
                     score_binary = 0
         else: 
@@ -602,7 +641,7 @@ def evaluate_redewiedergabe(response: str, prediction: str) -> Dict[str, float]:
 
     divisor = len(response_label_dict.keys())
 
-    return {'score':score_sum/divisor, 'score binary':score_binary_sum/divisor}
+    return (confusion,{'score':score_sum/divisor, 'score binary':score_binary_sum/divisor})
 
 
 def write_readable_evaluation(eval_dict: Dict, fname: str) -> None:
@@ -690,13 +729,12 @@ def write_confusion_matrices_to_file(conf_matrices,fname):
             # Write the key
             file.write(f"{key}\n")
             # Write the confusion matrix as a readable table
-            print(matrix)
+
             file.write(str(matrix))
             # Write two new lines before the next key
             file.write("\n\n")
 
-
-if __name__ == "__main__":
+def evaluate_models(args):
 
     output_dir_exist = os.path.exists('evaluation')
     if not output_dir_exist:
@@ -705,43 +743,9 @@ if __name__ == "__main__":
 
     suffix = get_file_suffix()
 
-    
-
-    CLI=argparse.ArgumentParser()
-    CLI.add_argument(
-    "--eval_dir", 
-    type=str,
-    #default='data/train_test_datasets/eval/eval',  
-    #default='data/train_test_datasets/eval_categories', 
-    default='data/train_test_datasets/eval_synth'
-    )
-    CLI.add_argument(
-    "--models",  
-    nargs="*", 
-    type=str,
-    default=['./results/DettmersAll7b64/checkpoint-7000-merged'],  # default if nothing is provided
-    #default = ['gpt-4']
-    )
-
-    CLI.add_argument(
-    "--samples", 
-    type=int,
-    default='400',  
-    )
-    args = CLI.parse_args()
-    
-    CLI.add_argument(
-    "--loadDict", 
-    type=str,
-    default = ''
-    #default='evaluation/evaluation_dictgpt-4_533',  
-    )
-    args = CLI.parse_args()
-
     eval_folder = args.eval_dir #'data/train_test_datasets/run_1_Cheung/eval'
 
-    models = args.models #['results/run_1/final_merged_checkpoint/']
-
+    models = args.models
     samples = args.samples
 
     if  environ.get('EVAL_DIR') is not None:    
@@ -802,3 +806,41 @@ if __name__ == "__main__":
         torch.cuda.empty_cache()
 
     write_readable_statistics(statistics,'evaluation_statistics_'+suffix)
+
+if __name__ == "__main__":
+    
+
+    CLI=argparse.ArgumentParser()
+    CLI.add_argument(
+    "--eval_dir", 
+    type=str,
+    #default='data/train_test_datasets/eval/eval',  
+    #default='data/train_test_datasets/eval_categories', 
+    #default='data/train_test_datasets/eval_synth'
+    #default = 'data/train_test_datasets/run_4_onlybsp/eval'
+    default = 'data/train_test_datasets/run_9_rede_arg_bsp_bspsynth/eval'
+    )
+    CLI.add_argument(
+    "--models",  
+    nargs="*", 
+    type=str,
+    default=['./results/redeArgBspBspsynth7B64r16/checkpoint-1000-merged'],  # default if nothing is provided
+    #default = ['gpt-4']
+    )
+
+    CLI.add_argument(
+    "--samples", 
+    type=int,
+    default='4',  
+    )
+    args = CLI.parse_args()
+    
+    CLI.add_argument(
+    "--loadDict", 
+    type=str,
+    default = ''
+    #default='evaluation/evaluation_dictredeArgBspBspsynth7B64r16_1000_557',  
+    )
+    args = CLI.parse_args()
+
+    evaluate_models(args)

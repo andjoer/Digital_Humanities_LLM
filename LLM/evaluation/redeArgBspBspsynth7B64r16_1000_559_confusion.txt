@@ -1,0 +1,26 @@
+redewiedergabe
+                      keine redewiedergabe  redewiedergabe
+keine redewiedergabe                     2               2
+redewiedergabe                           0               0
+
+arguments
+              majorclaim   premise   claim  false
+ majorclaim            0         0       0      0
+ premise               0         0       1      0
+ claim                 1         0       1      0
+false                  0         0       0      1
+
+erzählposition
+           auktorial  personal
+auktorial          2         2
+personal           0         0
+
+wiedergabeform
+              erzählstimme  figurenrede
+erzählstimme             2            1
+figurenrede              1            0
+
+gedankengang
+      Nein
+Nein     4
+
