@@ -64,7 +64,7 @@ class ScriptArguments:
     max_grad_norm: Optional[float] = field(default=0.3)
     weight_decay: Optional[int] = field(default=0.001)
     lora_alpha: Optional[int] = field(default=64)                           # lora alpha
-    lora_dropout: Optional[float] = field(default=0.1)
+    lora_dropout: Optional[float] = field(default=0.16)
     lora_r: Optional[int] = field(default=512)                               # lora r-> alpha*4
     max_seq_length: Optional[int] = field(default=4096)
     model_name: Optional[str] = field(

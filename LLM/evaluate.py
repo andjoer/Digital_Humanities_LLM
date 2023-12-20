@@ -831,7 +831,7 @@ if __name__ == "__main__":
     CLI.add_argument(
     "--samples", 
     type=int,
-    default='4',  
+    default='200',  
     )
     args = CLI.parse_args()
     

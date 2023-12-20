@@ -9,7 +9,7 @@ from peft import AutoPeftModelForCausalLM
 import torch
 from tqdm import tqdm
 
-input_dirs = ['./results/redeArgBspBspsynth7B64r16/checkpoint-1000']
+input_dirs = ['./results/redeArgBspBspsynth7B64r16/checkpoint-2000']
 
 if  environ.get('INPUT_DIR') is not None:    
     input_dirs = [environ.get('INPUT_DIRS')]
