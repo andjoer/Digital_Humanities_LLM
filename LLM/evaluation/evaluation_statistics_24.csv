@@ -1,8 +1,0 @@
-idx,LlamaChatOnlyBspSimp7b64_300
-bsp_ds_simple_eval;Beispiel,0.7034963782017047
-bsp_ds_simple_eval;Beispiel_für,0.4421266337426809
-bsp_ds_simple_eval;Erzählposition,0.5955128205128204
-bsp_ds_simple_eval;erzählposition_binary,0.7692307692307693
-bsp_ds_simple_eval;Wiedergabeform,0.46153846153846156
-bsp_ds_simple_eval;wiedergabe_binary,0.46153846153846156
-bsp_ds_simple_eval;total_distance,0.849953415217223

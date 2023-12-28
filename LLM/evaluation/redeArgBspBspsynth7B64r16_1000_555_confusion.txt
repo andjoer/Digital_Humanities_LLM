@@ -1,7 +1,0 @@
-arguments
-                                                     majorclaim  7) wenn die fehler unserer vorgänger uns ein indirekter weg zu den zielen sind, können uns die leistungen anderer als direkter weg dienen   claim   premise
- majorclaim                                                   0                                                  0                                                                                               0         0
-7) wenn die fehler unserer vorgänger uns ein in...            0                                                  0                                                                                               0         0
- claim                                                        1                                                  1                                                                                               1         0
- premise                                                      0                                                  0                                                                                               1         0
-

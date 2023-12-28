@@ -7,10 +7,10 @@ torch==2.0.1
 tqdm==4.65.0
 transformers
 wandb
-datasets
+datasets==2.15.0
 accelerate
 bitsandbytes
-transformers
+transformers==4.36.1
 einops
 bs4
 openai

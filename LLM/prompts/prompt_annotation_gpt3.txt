@@ -1,0 +1,12 @@
+Im folgenden Textausschnitt wird ein Beispiel gegeben das performativ explizit durch "zum Beispiel", "z.B." oder "beispielsweise" etc. explizit gemacht wird. Was ist das Beispiel und wofür ist es ein Beispiel?  Was ist die Wiedergabeform in welcher das Beispiel wiedergeben wird, also steht es in indirekter Rede oder wird es vom Erzähler des Textes verwendet (Wenn es in indirekter Rede steht, schreibe die Quelle/den Sprecher in Klammern dahinter)? Kommt das Beispiel in unausgesprochenen Gedanken eines Protagonisten vor? Was ist die Erzählhaltung (personal oder auktorial) des Textes und aus welcher Perspektive wird erzählt (schreibe die Perspektive in Klammern)?
+Kommt es in einem Gedankengang eines Protagonisten vor? In welcher Zeit und in welchem Modus steht das Beispiel und in welchem der Text?
+Antworte in Form eines Python Dictionaries der Form:
+'Beispiel': das Beispiel,
+'Beispiel_für: für was es ein Beispiel ist,
+'Erzählposition': auktorial oder personaler Erzähler,
+'Wiedergabeform': Erzählstimme oder Figurenrede? Wenn Figurenrede: Wer spricht? ist es direkte oder indirekte Rede?,
+'in_gedankengang': ob das Beispiel Teil eines Gedankengangs ist,
+'Modus_Zeit_Beispiel: Modus und Tempus des Beispiels,
+'Modus_Zeit_Text': Modus und Tempus des Texts 
+
+Dies ist der zu annotierende Textausschnitt: 

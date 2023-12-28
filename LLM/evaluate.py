@@ -15,8 +15,16 @@ import os
 from peft import AutoPeftModelForCausalLM
 import argparse
 from os import environ
+import json
 
-from utils import formatting_func_standard, formatting_func_chat, formatting_func_api,openAi_gen, calculate_confusion_matrix
+from utils import formatting_func_standard, formatting_func_chat, formatting_func_api,openAi_gen, calculate_confusion_matrix, formatting_func_json_gpt3, formatting_func_dataframe, formatting_gpt4_anno, formatting_gpt3_anno, correct_annotations, openAi_gen_batch, calculate_f1_scores
+
+def load_jsonl(file_path):
+    data = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            data.append(json.loads(line))
+    return data
 
 
 class Evaluate():
@@ -44,31 +52,42 @@ class Evaluate():
     def __init__(self,
                  model: str = "",
                  samples_per_ds: int = 2,
+                 function_dict = None,
+                 custom_formatting = {},
                  lora: bool = True):
         
+        self.custom_formatting = custom_formatting
         self.confusion_matrices = {}
         self.samples_per_ds: int = samples_per_ds
  
-        if "gpt-4" in model.lower():
+        self.function_dict = function_dict
+
+        self.model = model
+
+        self.eval_dict: Dict[str, List[Union[str, float]]] = {'name':[],'instruction':[],'response':[],'prediction':[],'score':[]}
+
+    def init_model(self):
+
+        if "gpt-4" in self.model.lower() or "gpt-3" in self.model.lower():
             self.separator = '### assistant'
             self.user_separator = '### human:'
             self.formatting_function = formatting_func_api
 
         else:
 
-            self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(model)
+            self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(self.model)
             
 
             self.pipeline: pipeline = transformers.pipeline(
                 "text-generation",
-                model=model,
+                model=self.model,
                 torch_dtype=torch.float16,
                 device_map= {"":0},
                 trust_remote_code=True,
                 tokenizer=self.tokenizer
             )
 
-            if "llama" in model.lower() and "chat" in model.lower():
+            if "llama" in self.model.lower() and "chat" in self.model.lower():
                 self.separator = '[/INST]'
                 self.user_separator = '<</SYS>>'
                 self.formatting_function = formatting_func_chat
@@ -81,54 +100,124 @@ class Evaluate():
                 self.user_separator = '### human:'
                 self.formatting_function = formatting_func_standard
 
-        self.model = model
-
-        self.eval_dict: Dict[str, List[Union[str, float]]] = {'name':[],'instruction':[],'response':[],'prediction':[],'score':[]}
-
     def load_ds_from_folder(self, folder: str) -> Dict[str, Any]:
         files = glob.glob(folder+"/*")
         ds = {}
         for file in files: 
-            name = file.split('/')[-1].split('.')[0]
-            with open(file, 'rb') as handle:
-                ds[name] = pickle.load(handle).map(self.formatting_function, batched=True)
+            if not 'gpt3.5' in file:
+                name = file.split('/')[-1].split('.')[0]
+            else:
+                name = file.split('/')[-1][:-4]
+
+            if file[-5:].lower() != 'jsonl':
+                with open(file, 'rb') as handle:
+                
+                    unpickled = pickle.load(handle)
+
+                    if isinstance(unpickled, pd.DataFrame):
+
+                        if name in self.custom_formatting:
+                             ds[name] = self.custom_formatting[name](unpickled)
+                        else:
+
+                            ds[name] = formatting_func_dataframe(unpickled)
+                    else:
+                        ds[name] = unpickled.map(self.formatting_function, batched=True)
+            else: 
+                print('processing jsonl')
+                '''with open(file, 'r', encoding='utf-8') as handle:
+                    json_data = json.load(handle)'''
+                json_data = load_jsonl(file)
+                ds[name] = formatting_func_json_gpt3(json_data)
 
         return ds
 
-    def predict_responses(self, ds: Dict[str, Any], name: str) -> None:
-
+    def predict_responses(self, ds: Dict[str, Any], name: str, specific=False) -> None:
         print('start prediction')
         ds = ds['text']
+        filtered_ds = []
+        number = 0
+        # First, filter the dataset based on the criteria
+        for sample in ds:
+            
+            inst_resp = sample.split(self.separator)
+            if not specific or (specific and check_specific(inst_resp[1])):
+                filtered_ds.append(sample)
+                number += 1
 
-        for sample in tqdm(ds[:self.samples_per_ds]):
+            if number > self.samples_per_ds:
+                break
+        if 'gpt-4' in self.model.lower() or 'gpt-3' in self.model.lower():
+            self.predict_responses_openAi(filtered_ds, name)
+        else:
+            self.predict_huggingface(filtered_ds, name)
 
+    def predict_huggingface(self, ds, name):
+        
+        for sample in tqdm(ds):
             inst_resp = sample.split(self.separator)
 
+
             prompt = inst_resp[0] + self.separator
-
-            if 'gpt-4' in self.model.lower():
-                prediction = openAi_gen(prompt)
-
-            else:
-                prediction = self.pipeline(
+            prediction = self.pipeline(
                 prompt,
                 do_sample=False,
-                temperature = 0.0,
+                temperature=0.0,
                 top_p=0.9,
                 num_return_sequences=1,
                 eos_token_id=self.tokenizer.eos_token_id,
-                max_new_tokens = 500,
+                max_new_tokens=500,
                 return_full_text=False
-                )[0]['generated_text']
+            )[0]['generated_text']
 
-            if 'gpt-4' in self.model.lower():
-                self.eval_dict['instruction'].append(prompt)
-            else:
-                self.eval_dict['instruction'].append(prompt.split(self.user_separator)[1])
+            # Adjusting the instruction appending logic as per the original function
+            self.eval_dict['instruction'].append(prompt.split(self.user_separator)[1])
             self.eval_dict['response'].append(inst_resp[1])
             self.eval_dict['prediction'].append(prediction)
             self.eval_dict['name'].append(name)
             self.eval_dict['score'].append('-')
+
+    def predict_responses_openAi(self, ds, name):
+        # Create a list of tuples (index, prompt)
+        indexed_prompts = [(i, sample.split(self.separator)[0]) for i, sample in enumerate(ds)]
+        self.batch_size = 60
+        # Extract just the prompts for openAi_gen and maintain their order
+        prompts = [prompt for _, prompt in indexed_prompts]
+
+        number = 0
+        # Splitting the indexed prompts into batches
+        for batch in tqdm(self.split_into_batches(prompts, self.batch_size)):
+            predictions = openAi_gen_batch(batch, self.model)
+
+            for i, prediction in enumerate(predictions):
+                # Retrieve the original index and prompt from the batch
+                original_index = indexed_prompts[number + i][0]
+                original_sample = ds[original_index]
+                inst_resp = original_sample.split(self.separator)
+
+                self.eval_dict['instruction'].append(inst_resp[0])
+                self.eval_dict['response'].append(inst_resp[1])
+                self.eval_dict['prediction'].append(prediction)
+                self.eval_dict['name'].append(name)
+                self.eval_dict['score'].append('-')
+
+            number += len(batch)
+
+            self.save_eval_dict('evaluation/evaluation_dict_backup'+self.model+'_'+str(number))
+
+
+    def split_into_batches(self,ds, batch_size):
+        """
+        Splits the dataset into batches of a specified size.
+
+        :param ds: The dataset to be split.
+        :param batch_size: The size of each batch.
+        :return: A generator that yields batches of the dataset.
+        """
+        for i in range(0, len(ds), batch_size):
+            yield ds[i:i + batch_size]
+
+
 
     def save_eval_dict(self, fname):
         with open(fname+'.pkl', 'wb') as file:
@@ -138,15 +227,20 @@ class Evaluate():
         with open(fname+'.pkl', 'rb') as file:
             self.eval_dict = pickle.load(file)
 
-
     def process_eval_files(self, folder: str) -> None:
 
         ds_dict = self.load_ds_from_folder(folder)
 
         for ds_name in ds_dict.keys():
 
+            if ds_name  == 'bsp_ds_clean':
+
+                check_specific = False             ### could be changed - temporary solution
+            else: 
+                check_specific = False
+
             print(f'Processing Dataset {ds_name}')
-            self.predict_responses(ds_dict[ds_name], ds_name)
+            self.predict_responses(ds_dict[ds_name], ds_name,specific=check_specific)
 
 
     def numerical_evaluation(self, function_dict: Dict[str, Callable[[str, str], float]]) -> None:
@@ -154,7 +248,9 @@ class Evaluate():
         for idx, _ in enumerate(self.eval_dict['instruction']):
             try:
                 name = self.eval_dict['name'][idx] 
+            
                 if name in function_dict:
+         
                     evaluation = function_dict[name](self.eval_dict['response'][idx], self.eval_dict['prediction'][idx])
 
                     if not isinstance(evaluation, tuple):
@@ -236,6 +332,26 @@ def calc_common_labels_score(prediction: str, response: str, max_words: Optional
 
     return len(intersect) / divisor
 
+def check_specific(string: str) -> bool:
+
+    try:
+        
+        specific_dict = ast.literal_eval(extract_dict(string))
+
+    except: 
+        return False
+    
+    if not isinstance(specific_dict,dict):
+        return False
+
+    mandatory_keys = ["Beispiel","Beispiel_für","Erzählposition","Wiedergabeform","in_gedankengang","Modus_Zeit_Beispiel","Modus_Zeit_Text"]
+
+    for key in mandatory_keys:
+        if key not in specific_dict:
+            return False
+        
+    return True
+
 def extract_dict(string: str) -> Union[str, None]:
     """
     Extracts dictionary from the input string.
@@ -283,9 +399,21 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
         Union[Dict[str, float], int]: Dictionary of scores for each key in the response dictionary, or 0 if no valid python dict.
     """
 
-    try: 
+    try:
+        wiedergabe = None 
         response_dict = ast.literal_eval(response_dict)
+
+        
         prediction_dict = ast.literal_eval(prediction_dict)
+
+        for key in response_dict.keys():
+
+            if 'wiedergabeform' in key.lower():
+    
+                wiedergabe = response_dict[key]
+
+        response_dict = correct_annotations(response_dict)
+        prediction_dict = correct_annotations(prediction_dict,wiedergabe=wiedergabe)
     except: 
 
         return 0
@@ -301,8 +429,11 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
             if 'beispiel' in key.lower():
                 scores[key] = get_semantic_distance(prediction, response_dict[key], sentence_model)
             if 'in_gedankengang' in key.lower():
-                scores[key] = int(prediction == response_dict[key])
-                confusion['gedankengang'] = (prediction.lower(), response_dict[key].lower())
+                valid = ['ja', 'nein']
+                response_gedanke = extract_category(response_dict[key].lower(),valid)[0]
+                prediction_gedanke = extract_category(prediction.lower(),valid)[0]
+                scores[key] = int(prediction_gedanke == response_gedanke)
+                confusion['gedankengang'] = (prediction_gedanke, response_gedanke)
             else: 
                 scores[key] = calc_common_labels_score(prediction, response_dict[key])
 
@@ -318,7 +449,7 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
                         confusion['wiedergabeform'] = ('erzählstimme','figurenrede')
 
                 else:
-                    if 'figurenrede' not in response_dict[key].lower():  
+                    if 'erzählstimme' not in response_dict[key].lower():  
                         scores['wiedergabe_binary'] = 1
                         confusion['wiedergabeform'] = ('figurenrede','figurenrede')
                     else: 
@@ -337,12 +468,32 @@ def evaluate_examples_dict(response_dict: str, prediction_dict: str, sentence_mo
                         confusion['erzählposition'] = ('auktorial','personal')
 
                 else:
-                    if 'personal' not in response_dict[key].lower():  
+                    if 'auktorial' not in response_dict[key].lower():  
                         scores['erzählposition_binary'] = 1
                         confusion['erzählposition'] = ('personal','personal')
                     else: 
                         scores['erzählposition_binary'] = 0
                         confusion['erzählposition'] = ('personal','auktorial')
+
+            wiedergabe_gt, wiedergabe_pred = confusion.get('wiedergabeform', ('', ''))
+            erzählposition_gt, erzählposition_pred = confusion.get('erzählposition', ('', ''))
+            gedankengang_gt, gedankengang_pred = confusion.get('gedankengang', ('', ''))
+
+            # Create combined tuples
+            combined_wg_gd_gt = f"{wiedergabe_gt}_{gedankengang_gt}"
+            combined_wg_gd_pred = f"{wiedergabe_pred}_{gedankengang_pred}"
+            combined_wg_ep_gt = f"{wiedergabe_gt}_{erzählposition_gt}"
+            combined_wg_ep_pred = f"{wiedergabe_pred}_{erzählposition_pred}"
+            combined_ep_gd_gt = f"{erzählposition_gt}_{gedankengang_gt}"
+            combined_ep_gd_pred = f"{erzählposition_pred}_{gedankengang_pred}"
+
+            # Update combined confusion matrices
+            confusion['wiedergabe_gedankengang']=(combined_wg_gd_gt, combined_wg_gd_pred)
+
+            confusion['wiedergabe_erzählposition']=(combined_wg_ep_gt, combined_wg_ep_pred)
+
+            confusion['erzählposition_gedankengang']=(combined_ep_gd_gt, combined_ep_gd_pred)
+
 
         else: 
 
@@ -425,14 +576,14 @@ def evaluate_classification(response: str, prediction: str) -> Tuple[Tuple[str, 
         scores['classification_2'] = 1
         scores[prediction_2 + '_1'] = 0
         scores[prediction_2 + '_2'] = 1
-        confusion_matrix = (prediction_1,responses[0])
+        confusion_matrix = (responses[0],prediction_1)
 
     else: 
         scores['classification_1'] = 0
         scores['classification_2'] = 0
         scores[response.split(',')[0] + '_1'] = 0
         scores[response.split(',')[0] + '_2'] = 0
-        confusion_matrix = (prediction_1,responses[0])   
+        confusion_matrix = (responses[0],prediction_1)   
 
 
     if prediction_1_number in response: 
@@ -472,7 +623,6 @@ def evaluate_examples(response: str, prediction: str, sentence_model: SentenceTr
     Returns:
         dict: Dictionary of scores.
     """
-
     response_dict = extract_dict(response)
 
     if response_dict is not None:
@@ -495,7 +645,7 @@ def extract_number(string: str) -> Optional[str]:
         str: The extracted number if found, else None.
     """
 
-    match = re.search(r'[-+]?\d*\.\d+|\d+', string)
+    match = re.search(r'[-+]?\d*\.\d+|\d+', string.split('_')[-1])
     if match:
         return match.group(0)
     else:
@@ -715,22 +865,29 @@ def get_file_suffix() -> str:
 
     return str(max_num+1)
 
-def write_confusion_matrices_to_file(conf_matrices,fname):
+def write_confusion_matrices_to_file(conf_matrices, fname):
     """
-    Write confusion matrices to a file.
+    Write confusion matrices and their F1 scores to a file.
 
     :param conf_matrices: Dictionary of confusion matrices.
-    :param filename: Name of the file to write to.
+    :param fname: Name of the file to write to.
     """
-
-    fname = 'evaluation/'+fname
+    fname = 'evaluation/' + fname
     with open(fname, 'w') as file:
         for key, matrix in conf_matrices.items():
             # Write the key
             file.write(f"{key}\n")
-            # Write the confusion matrix as a readable table
 
-            file.write(str(matrix))
+            # Write the confusion matrix as a readable table
+            file.write(matrix.to_string())
+            file.write("\n")
+
+            # Calculate and write F1 scores
+            f1_scores = calculate_f1_scores(matrix)
+            file.write("F1 Scores:\n")
+            for category, score in f1_scores.items():
+                file.write(f"{category}: {score:.2f}\n")
+
             # Write two new lines before the next key
             file.write("\n\n")
 
@@ -748,15 +905,6 @@ def evaluate_models(args):
     models = args.models
     samples = args.samples
 
-    if  environ.get('EVAL_DIR') is not None:    
-        eval_folder= environ.get('EVAL_DIR')
-        print('updated eval_dir from ENV: '+str(eval_folder))
-    if  environ.get('MODELS') is not None:    
-        models = [environ.get('MODELS')]
-        print('updated models from ENV: '+str(models))
-    if  environ.get('EVAL_SAMPLES') is not None:    
-        samples = int(environ.get('EVAL_SAMPLES'))
-        print('updated models from ENV: '+str(samples))
 
     sentence_model = SentenceTransformer('T-Systems-onsite/cross-en-de-roberta-sentence-transformer').to('cuda')
     evaluate_examples_sent = partial(evaluate_examples,sentence_model=sentence_model)
@@ -776,21 +924,32 @@ def evaluate_models(args):
         if model_ckpt is not None:
             model_name += '_'+model_ckpt
 
-        if model[-1] != '/':
-            model += '/'
+        if 'gpt-4' not in model and 'gpt-3' not in model:
+            if model[-1] != '/':
+                model += '/'
         print(model_name)
-        eval = Evaluate(model,samples_per_ds=samples)
 
+        if 'gpt-4' in model:
+            custom_formatting = {'gpt4_human_annotated_examples':formatting_gpt4_anno,'gpt4_human_annotated_examples_v2':formatting_gpt4_anno,'gpt4_human_annotated_examples_v3':formatting_gpt4_anno,'human_annotated_eval_gpt3':formatting_gpt4_anno}
+        else:
+            custom_formatting = {'gpt4_human_annotated_examples':formatting_gpt3_anno,'gpt4_human_annotated_examples_v2':formatting_gpt3_anno,'gpt4_human_annotated_examples_v3':formatting_gpt3_anno,'human_annotated_eval_gpt3':formatting_gpt3_anno}
+
+        function_dict = {'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds_clean':evaluate_examples_sent,'bsp_ds_simple_eval_clean':evaluate_examples_sent,
+                                   'categories_annotation_eval':evaluate_classification,'gpt4_annotated_examples_eval':evaluate_examples_sent,'finetune_gpt3.5_eval':evaluate_examples_sent,
+                                   'gpt4_examples_eval':evaluate_examples_sent,'gpt3.5_examples_eval':evaluate_examples_sent, 'gpt3.5_examples_eva':evaluate_examples_sent,'gpt4_annotated_examples_2_eval':evaluate_examples_sent,
+                                   'gpt4_human_annotated_examples':evaluate_examples_sent,'human_annotated_examples':evaluate_examples_sent,'gpt4_human_annotated_examples_v2':evaluate_examples_sent,'gpt4_human_annotated_examples_v3':evaluate_examples_sent,
+                                   'finetune_gpt3_clean_eval':evaluate_examples_sent,'human_annotated_eval_gpt3':evaluate_examples_sent}
         
+        eval = Evaluate(model,samples_per_ds=samples,function_dict=function_dict,custom_formatting=custom_formatting)
         if args.loadDict:
             eval.load_eval_dict(args.loadDict)
         else:
+            eval.init_model()
             eval.process_eval_files(eval_folder)
             
-            eval.save_eval_dict('evaluation/evaluation_dict'+model_name+'_'+suffix)
+            eval.save_eval_dict('evaluation/evaluation_dict_'+model_name+'_'+suffix)
         
-        eval.numerical_evaluation({'redewiedergabe':evaluate_redewiedergabe,'arguments':evaluate_arguments,'bsp_ds_clean':evaluate_examples_sent,'bsp_ds_simple_eval_clean':evaluate_examples_sent,
-                                   'categories_annotation_eval':evaluate_classification,'gpt4_annotated_examples_eval':evaluate_examples_sent})
+        eval.numerical_evaluation(function_dict)
 
         write_readable_evaluation(eval.eval_dict,'evaluation_'+model_name+'_'+suffix)
 
@@ -818,14 +977,28 @@ if __name__ == "__main__":
     #default='data/train_test_datasets/eval_categories', 
     #default='data/train_test_datasets/eval_synth'
     #default = 'data/train_test_datasets/run_4_onlybsp/eval'
-    default = 'data/train_test_datasets/run_9_rede_arg_bsp_bspsynth/eval'
+    #default = 'data/train_test_datasets/run_9_rede_arg_bsp_bspsynth/eval'
+    #default = './data/train_test_datasets/train_gpt3.5/eval'
+    #default = './data/train_test_datasets/eval_human_gpt3'
+    #default = './data/train_test_datasets/eval_human_gpt4_df_3'
+    #default = './data/train_test_datasets/train_gpt3_3/eval'
+    default = './data/train_test_datasets/eval_human_gpt34_df'
     )
     CLI.add_argument(
     "--models",  
     nargs="*", 
     type=str,
-    default=['./results/redeArgBspBspsynth7B64r16/checkpoint-1000-merged'],  # default if nothing is provided
+    #default=['./results/DettmersAll7b64/checkpoint-2500-merged']  # default if nothing is provided
     #default = ['gpt-4']
+    #default = ['gpt-4-1106-preview']
+    #default = ['gpt-3.5-turbo-1106']
+    #default = ['gpt-4']
+    #default = ['ft:gpt-3.5-turbo-0613:personal::8YFI8wT2']
+    #default = ['ft:gpt-3.5-turbo-0613:personal::8YYgMaya']
+    #default= ['ft:gpt-3.5-turbo-1106:personal::8ZSSBQmP']
+    #default = ['Bspsynth13b16r8_680']
+    #default = ['ft:gpt-3.5-turbo-1106:personal::8aS3Zc3u']
+    default = ['ft:gpt-3.5-turbo-1106:personal::8ak7FynG']
     )
 
     CLI.add_argument(
@@ -839,8 +1012,20 @@ if __name__ == "__main__":
     "--loadDict", 
     type=str,
     default = ''
-    #default='evaluation/evaluation_dictredeArgBspBspsynth7B64r16_1000_557',  
+    #default='./evaluation/evaluation_dictgpt-4_533',  
     )
     args = CLI.parse_args()
+
+
+    if  environ.get('EVAL_DIR') is not None:    
+        eval_folder= environ.get('EVAL_DIR')
+        print('updated eval_dir from ENV: '+str(eval_folder))
+    if  environ.get('MODELS') is not None:    
+        models = [environ.get('MODELS')]
+        print('updated models from ENV: '+str(models))
+    if  environ.get('EVAL_SAMPLES') is not None:    
+        samples = int(environ.get('EVAL_SAMPLES'))
+        print('updated models from ENV: '+str(samples))
+
 
     evaluate_models(args)

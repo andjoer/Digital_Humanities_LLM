@@ -58,7 +58,7 @@ class PrepareDataset:
                  column_response: str = "response",
                  text_separator: str = " ",
                  max_text_chunks: int = 10000,
-                 test_size: float = 0.15) -> None:
+                 test_size: float = 0.08) -> None:
         
         self.input_dir = input_dir
         self.instruction_prompt = instruction_prompt
@@ -152,7 +152,7 @@ class PrepareDataset:
 
             ds_list = self.read_file(file,extension)
             ds_name = fname.split('.')[0]
-            if fname in self.eval_ds:
+            if fname in self.eval_ds and self.test_size > 0:
                 ds = self.list_to_ds(ds_list,split=True)
                 ds_dict_train[ds_name] = ds['train']
                 
@@ -172,10 +172,12 @@ class PrepareDataset:
         #self.test_dataset = concatenate_datasets(ds_dict_test).shuffle(seed=42)
 
 def save_ds_list(ds_list, folder,suffix=""):
+    print('save')
     if suffix:
         suffix ='_'+suffix
-    for ds_name in ds.test_dataset.keys():
+    for ds_name in ds_list.keys():
         with open(folder+'/'+ds_name+suffix+'.pkl', 'wb') as handle:
+            print(folder)
             pickle.dump(ds_list[ds_name], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
