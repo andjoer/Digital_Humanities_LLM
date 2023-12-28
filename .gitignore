@@ -1,5 +1,6 @@
 LLM/wandb/
 LLM/data/external_datasets/
+LLM/data/datasets/
 LLM/checkpoint*
 LLM/final_*
 LLM/CheungGuanaco.pkl
@@ -10,3 +11,6 @@ LLM/semantic_scholar/
 LLM/data/train_test_datasets/run_1_Cheung/
 LLM/results/
 Annotation/sample_images/
+LLM/evaluation/
+LLM/data/from_synthetic/
+LLM/data/train_test_datasets/
