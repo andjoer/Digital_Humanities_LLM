@@ -990,7 +990,7 @@ if __name__ == "__main__":
     type=str,
     #default=['./results/DettmersAll7b64/checkpoint-2500-merged']  # default if nothing is provided
     #default = ['gpt-4']
-    #default = ['gpt-4-1106-preview']
+    default = ['gpt-4-1106-preview']
     #default = ['gpt-3.5-turbo-1106']
     #default = ['gpt-4']
     #default = ['ft:gpt-3.5-turbo-0613:personal::8YFI8wT2']
@@ -998,7 +998,7 @@ if __name__ == "__main__":
     #default= ['ft:gpt-3.5-turbo-1106:personal::8ZSSBQmP']
     #default = ['Bspsynth13b16r8_680']
     #default = ['ft:gpt-3.5-turbo-1106:personal::8aS3Zc3u']
-    default = ['ft:gpt-3.5-turbo-1106:personal::8ak7FynG']
+    #default = ['ft:gpt-3.5-turbo-1106:personal::8ak7FynG']
     )
 
     CLI.add_argument(
@@ -1011,8 +1011,8 @@ if __name__ == "__main__":
     CLI.add_argument(
     "--loadDict", 
     type=str,
-    default = ''
-    #default='./evaluation/evaluation_dictgpt-4_533',  
+    #default = ''
+    default='./evaluation/evaluation_dict_gpt-4-1106-preview_691',  
     )
     args = CLI.parse_args()
 
