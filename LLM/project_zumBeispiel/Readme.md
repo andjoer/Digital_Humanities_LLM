@@ -453,91 +453,84 @@ Dataset: 1600 synthetic plus 57 human annotated
 ## Model: gpt-3.5-turbo-1106
 Dataset: only 1600 synthetic
 
-### finetune_gpt3_clean_eval_wiedergabe_gedankengang
+### human_annotated_eval_gpt3_wiedergabe_gedankengang
 
-
-|                    | figurenrede_ja | figurenrede_nein | erzählstimme_nein | erzählstimme_ja |
-|--------------------|----------------|------------------|-------------------|-----------------|
-| figurenrede_ja     |              0 |                0 |                 0 |               0 |
-| figurenrede_nein   |              0 |                9 |                 1 |               4 |
-| erzählstimme_nein  |              3 |                2 |                62 |               4 |
-| erzählstimme_ja    |              4 |                1 |                11 |              33 |
+|                    | erzählstimme_ja | erzählstimme_nein | figurenrede_nein | figurenrede_ja |
+|--------------------|-----------------|-------------------|------------------|----------------|
+| erzählstimme_ja    |              24 |                 3 |                0 |              2 |
+| erzählstimme_nein  |               5 |                18 |                1 |              1 |
+| figurenrede_nein   |               6 |                13 |               36 |              0 |
+| figurenrede_ja     |               0 |                 0 |                2 |              0 |
 
 #### F1 Scores:
+- erzählstimme_ja: 0.75
+- erzählstimme_nein: 0.61
+- figurenrede_nein: 0.77
 - figurenrede_ja: 0.00
-- figurenrede_nein: 0.69
-- erzählstimme_nein: 0.86
-- erzählstimme_ja: 0.73
 
+### human_annotated_eval_gpt3_wiedergabe_erzählposition
 
-### finetune_gpt3_clean_eval_wiedergabe_erzählposition
-
-
-|                          | erzählstimme_personal | figurenrede_personal | figurenrede_auktorial | erzählstimme_auktorial |
-|--------------------------|-----------------------|----------------------|-----------------------|------------------------|
-| erzählstimme_personal    |                     38 |                    5 |                     0 |                      5 |
-| figurenrede_personal     |                      4 |                    7 |                     1 |                      0 |
-| figurenrede_auktorial    |                      0 |                    1 |                     0 |                      1 |
-| erzählstimme_auktorial   |                      0 |                    3 |                     2 |                     67 |
+|                          | erzählstimme_auktorial | figurenrede_auktorial | erzählstimme_personal | figurenrede_personal |
+|--------------------------|------------------------|-----------------------|-----------------------|----------------------|
+| erzählstimme_auktorial   |                     17 |                     0 |                     6 |                    0 |
+| figurenrede_auktorial    |                      7 |                     3 |                     0 |                    3 |
+| erzählstimme_personal    |                      2 |                     0 |                    25 |                    4 |
+| figurenrede_personal     |                      3 |                     3 |                     9 |                   29 |
 
 #### F1 Scores:
-- erzählstimme_personal: 0.84
-- figurenrede_personal: 0.50
-- figurenrede_auktorial: 0.00
-- erzählstimme_auktorial: 0.92
+- erzählstimme_auktorial: 0.65
+- figurenrede_auktorial: 0.32
+- erzählstimme_personal: 0.70
+- figurenrede_personal: 0.73
 
+### human_annotated_eval_gpt3_erzählposition_gedankengang
 
-### finetune_gpt3_clean_eval_erzählposition_gedankengang
-
-|                | auktorial_nein | auktorial_ja | personal_nein | personal_ja |
-|----------------|----------------|--------------|---------------|-------------|
-| auktorial_nein |             60 |            1 |             1 |           2 |
-| auktorial_ja   |              7 |            2 |             0 |           1 |
-| personal_nein  |              3 |            0 |            10 |           8 |
-| personal_ja    |              3 |            0 |             2 |          34 |
-
-#### F1 Scores:
-- auktorial_nein: 0.88
-- auktorial_ja: 0.31
-- personal_nein: 0.59
-- personal_ja: 0.81
-
-### finetune_gpt3_clean_eval_erzählposition
-
-|           | personal | auktorial |
-|-----------|----------|-----------|
-| personal  |       54 |         6 |
-| auktorial |        4 |        70 |
+|                | personal_nein | personal_ja | auktorial_ja | auktorial_nein |
+|----------------|---------------|-------------|--------------|----------------|
+| personal_nein  |            31 |           8 |            0 |              7 |
+| personal_ja    |             2 |          26 |            0 |              1 |
+| auktorial_ja   |             0 |           0 |            0 |              2 |
+| auktorial_nein |             6 |           3 |            1 |             24 |
 
 #### F1 Scores:
-- personal: 0.92
-- auktorial: 0.93
+- personal_nein: 0.73
+- personal_ja: 0.79
+- auktorial_ja: 0.00
+- auktorial_nein: 0.71
 
+### human_annotated_eval_gpt3_erzählposition
 
-### finetune_gpt3_clean_eval_wiedergabeform
-
-
-|              | figurenrede | erzählstimme |
-|--------------|-------------|--------------|
-| figurenrede  |           9 |            5 |
-| erzählstimme |          10 |          110 |
+|           | auktorial | personal |
+|-----------|-----------|----------|
+| auktorial |        27 |        9 |
+| personal  |         8 |       67 |
 
 #### F1 Scores:
-- figurenrede: 0.55
-- erzählstimme: 0.94
+- auktorial: 0.76
+- personal: 0.89
 
+### human_annotated_eval_gpt3_wiedergabeform
 
-### finetune_gpt3_clean_eval_gedankengang
+|              | erzählstimme | figurenrede |
+|--------------|--------------|-------------|
+| erzählstimme |           50 |            4 |
+| figurenrede  |           19 |           38 |
 
+#### F1 Scores:
+- erzählstimme: 0.81
+- figurenrede: 0.77
+
+### human_annotated_eval_gpt3_gedankengang
 
 |      | ja | nein |
 |------|----|------|
-| ja   | 37 |   12 |
-| nein | 11 |   74 |
+| ja   | 26 |    5 |
+| nein | 12 |   68 |
 
 #### F1 Scores:
-- ja: 0.76
-- nein: 0.87
+- ja: 0.75
+- nein: 0.89
+
 
 
 # Classification of examples into categories
