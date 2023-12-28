@@ -3,8 +3,6 @@
 ## Model: gpt-4-1106-preview
 Evaluation dataset: full human annotated Dataset
 
-Selbstverständlich, ich formatiere auch diese Daten für eine GitHub-README-Datei im Markdown-Format. Hier sind die formatierten Tabellen und Daten:
-
 ### gpt4_human_annotated_examples_v3_wiedergabe_gedankengang
 
 |                    | erzählstimme_nein | figurenrede_ja | figurenrede_nein | erzählstimme_ja |
@@ -97,8 +95,6 @@ Selbstverständlich, ich formatiere auch diese Daten für eine GitHub-README-Dat
 Dataset: only 1600 synthetic
 Evaluation dataset: full human annotated Dataset
 
-Natürlich, ich formatiere auch diese Daten für eine GitHub-README-Datei im Markdown-Format. Hier sind die formatierten Tabellen und Daten:
-
 ### gpt4_human_annotated_examples_v3_wiedergabe_gedankengang
 
 |                    | figurenrede_nein | erzählstimme_ja | figurenrede_ja | erzählstimme_nein |
@@ -182,8 +178,6 @@ Natürlich, ich formatiere auch diese Daten für eine GitHub-README-Datei im Mar
 # Annotation synthetic plus 57 human annotated
 ## Model: gpt-4-1106-preview
 Evaluationdataset: Human annotated minus the training Data for GPT3
-
-Natürlich, ich kann auch diese Daten für eine GitHub-README-Datei im Markdown-Format formatieren. Hier sind die formatierten Tabellen und Daten:
 
 ### human_annotated_eval_gpt3_wiedergabe_gedankengang
 
@@ -276,6 +270,7 @@ Natürlich, ich kann auch diese Daten für eine GitHub-README-Datei im Markdown-
 
 ## Model: gpt-3.5-turbo-1106
 Dataset: 450 synthetic plus 57 human annotated
+
 ### human_annotated_eval_gpt3_wiedergabe_gedankengang
 
 
@@ -367,8 +362,6 @@ Dataset: 450 synthetic plus 57 human annotated
 
 ## Model: gpt-3.5-turbo-1106
 Dataset: 1600 synthetic plus 57 human annotated
-
-Gerne formatiere ich auch diese Daten für eine GitHub-README-Datei im Markdown-Format. Hier sind die formatierten Tabellen und Daten:
 
 ### human_annotated_eval_gpt3_wiedergabe_gedankengang
 
@@ -496,7 +489,6 @@ Dataset: only 1600 synthetic
 
 ### finetune_gpt3_clean_eval_erzählposition_gedankengang
 
-```markdown
 |                | auktorial_nein | auktorial_ja | personal_nein | personal_ja |
 |----------------|----------------|--------------|---------------|-------------|
 | auktorial_nein |             60 |            1 |             1 |           2 |
