@@ -540,7 +540,7 @@ Dataset: only 1600 synthetic
 - nein: 0.87
 
 
-# Classification of examples into cagegories
+# Classification of examples into categories
 
 |    | 4c | 1a | 4b | 2a | 4a | 3b | 2b | 4d | 4e | 3a |
 |----|----|----|----|----|----|----|----|----|----|----|
