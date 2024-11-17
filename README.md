@@ -2,6 +2,7 @@
 Optimizing the finetuning of large language models for digital humanities, especially for literary studies and philosophy.
 
 Cite: 
+
 @Article{mir_mods_00002057,
   author = 	{J{\"o}rg, Andreas},
   editor = 	{{Institut f{\"u}r Neuere deutsche Literatur- und Medienwissenschaft der FernUniversit{\"a}t in Hagen}
