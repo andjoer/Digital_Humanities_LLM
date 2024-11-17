@@ -3,6 +3,8 @@ Optimizing the finetuning of large language models for digital humanities, espec
 
 Cite: 
 
+Jörg, Andreas (2024): Taxonomie des Beispielgebrauchs in der Erzählprosa: Eine explorative Analyse im Kontext der Digital Humanities. In: z.B. Zeitschrift zum Beispiel Nummer 6: Themenheft Beispiel und Erzählen. Hagen: Hagen University Press. S. 13–36. (= Beiträge zur Literatur- und Medienwissenschaft). Online unter: https://ub-deposit.fernuni-hagen.de/receive/mir_mods_00002057. https://doi.org/10.57813/20240620-130147-0
+
 @Article{mir_mods_00002057,
   author = 	{J{\"o}rg, Andreas},
   editor = 	{{Institut f{\"u}r Neuere deutsche Literatur- und Medienwissenschaft der FernUniversit{\"a}t in Hagen}
